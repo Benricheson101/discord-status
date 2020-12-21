@@ -34,7 +34,7 @@ webhook.post('init', doc => {
   return doc;
 });
 
-webhook.pre<DBWebhookDoc>('validate', async function (next) {
+webhook.pre<WebhookDoc>('validate', async function (next) {
   const wh = new Webhook(this.webhook);
 
   if (!(await wh.isValid())) {
