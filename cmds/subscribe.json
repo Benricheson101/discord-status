@@ -1,0 +1,10 @@
+{
+  "name": "subscribe",
+  "description": "Subscribe to Discord status updates",
+  "options": [{
+    "name": "webhook",
+    "description": "The webhook used to post the updates. NOTE: webhook will NOT be publicly visible",
+    "type": 3,
+    "required": true
+  }]
+}

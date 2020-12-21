@@ -2,6 +2,8 @@ import axios, {AxiosResponse} from 'axios';
 import {EmbedBuilder, EmbedJSON} from './EmbedBuilder';
 
 export class Webhook {
+  ['constructor']!: typeof Webhook;
+
   token: string;
   id: string;
 
@@ -14,21 +16,16 @@ export class Webhook {
         }
   ) {
     if (typeof hook === 'string') {
-      const re = /^(?:https?:\/\/)(?:canary.|ptb.)?discord.com\/api\/webhooks\/(?<id>\d{16,18})\/(?<token>[A-Za-z0-9.]+)(\?.*)?$/;
-      const groups = re.exec(hook)?.groups;
-
-      if (!(groups?.token && groups?.id)) {
-        throw new TypeError('Invalid webhook');
-      }
-
-      hook = groups as {
-        id: NonNullable<WebhookResponse['id']>;
-        token: NonNullable<WebhookResponse['token']>;
-      };
+      hook = this.constructor.parse(hook);
     }
 
     this.token = hook.token;
     this.id = hook.id;
+  }
+
+  async get(): Promise<WebhookResponse> {
+    const result = await axios.get(this.URL);
+    return result.data;
   }
 
   async send(body: WebhookBody): Promise<RichWebhookPostResult> {
@@ -77,12 +74,37 @@ export class Webhook {
   }
 
   async isValid(): Promise<boolean> {
-    const res: AxiosResponse<WebhookResponse> = await axios.get(this.URL);
+    const res: AxiosResponse<WebhookResponse> = await axios.get(this.URL, {
+      validateStatus: null, // don't throw if status isn't 2xx
+    });
 
-    if (res.status === 200 && res.data.id === this.id) {
-      return true;
+    return res.status === 200 && res.data.id === this.id;
+  }
+
+  static parse(
+    hook: string
+  ): {
+    id: NonNullable<WebhookResponse['id']>;
+    token: NonNullable<WebhookResponse['token']>;
+  } {
+    const re = /^(?:https?:\/\/)(?:canary.|ptb.)?discord(?:app)?.com\/api\/webhooks\/(?<id>\d{16,18})\/(?<token>[-_A-Za-z0-9.]+)(\?.*)?$/;
+    const groups = re.exec(hook)?.groups;
+
+    if (!(groups?.token && groups?.id)) {
+      throw new TypeError('Invalid webhook');
     }
-    return false;
+
+    return {
+      id: groups.id,
+      token: groups.token,
+    };
+  }
+
+  toJSON(): {id: string; token: string} {
+    return {
+      id: this.id,
+      token: this.token,
+    };
   }
 }
 

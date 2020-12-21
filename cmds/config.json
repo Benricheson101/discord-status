@@ -1,0 +1,81 @@
+{
+  "name": "config",
+  "description": "Customize the status updates",
+  "options": [{
+    "name": "roles",
+    "description": "Ping a role when the status page is updated",
+    "type": 2,
+    "options": [{
+      "name": "add",
+      "description": "Add an additional role to ping",
+      "type": 1,
+      "options": [{
+        "name": "role",
+        "description": "The role to add",
+        "type": 8,
+        "required": true
+      },
+      {
+        "name": "channel",
+        "description": "Which status page subscription should ping the provided role. Defaults to current channel",
+        "type": 7,
+        "required": false
+      }]
+    },
+    {
+      "name": "remove",
+      "description": "Remove a role currently being pinged",
+      "type": 1,
+      "options": [{
+        "name": "role",
+        "description": "The role to remove",
+        "type": 8,
+        "required": true
+      },
+      {
+        "name": "channel",
+        "description": "Which status page subscription should the role pings be removed from. Defaults to current channel",
+        "type": 7,
+        "required": false
+      }]
+    },
+    {
+      "name": "get",
+      "description": "Show which roles will be pinged",
+      "type": 1,
+      "options": [{
+        "name": "channel",
+        "description": "Show only one channel. Shows all channels if omitted",
+        "type": 7,
+        "required": false
+      }]
+    }]
+  },
+  {
+    "name": "mode",
+    "description": "Should incident updates edit the original message or send a new message",
+    "type": 2,
+    "options": [{
+      "name": "edit",
+      "description": "Edit the original message instead of posting a new message with each incident update.",
+      "type": 1,
+      "options": [{
+        "name": "channel",
+        "description": "Which channel to modify",
+        "type": 7,
+        "required": false
+      }]
+    },
+    {
+      "name": "post",
+      "description": "Post a new message with each incident update",
+      "type": 1,
+      "options": [{
+        "name": "channel",
+        "description": "Which channel to modify",
+        "type": 7,
+        "required": false
+      }]
+    }]
+  }]
+}
