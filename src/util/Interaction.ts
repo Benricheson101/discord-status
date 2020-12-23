@@ -1,16 +1,47 @@
-import {AllowedMentions, Webhook, WebhookResponse} from './Webhook';
+import {AllowedMentions, RichWebhookPostResult, WebhookBody} from './Webhook';
 import {EmbedBuilder, EmbedJSON} from './EmbedBuilder';
+import axios from 'axios';
 
-export class Interaction extends Webhook {
-  constructor(
-    hook:
-      | string
-      | {
-          id: NonNullable<WebhookResponse['id']>;
-          token: NonNullable<WebhookResponse['token']>;
-        }
-  ) {
-    super(hook);
+export class Interaction {
+  private sentInitial = false;
+
+  constructor(interaction: Interaction) {
+    Object.assign(this, interaction);
+  }
+
+  async send<
+    T = InteractionResponse | WebhookBody,
+    U = T extends InteractionResponse ? void : RichWebhookPostResult
+  >(body: T): Promise<U> {
+    const url = this.sentInitial ? this.webhookURL : this.callbackURL;
+
+    const result = await axios.post(url, body, {
+      validateStatus: null,
+    });
+
+    this.sentInitial = true;
+
+    return result.data;
+  }
+
+  async editMsg(body: WebhookBody, id = '@original') {
+    const result = await axios.patch(
+      `${this.webhookURL}/messages/${id}`,
+      body,
+      {
+        validateStatus: null,
+      }
+    );
+
+    return result.data;
+  }
+
+  get callbackURL(): string {
+    return `https://discord.com/api/v8/interactions/${this.id}/${this.token}/callback`;
+  }
+
+  get webhookURL() {
+    return `https://discord.com/api/v8/webhooks/662416455366737949/${this.token}`;
   }
 }
 
@@ -102,9 +133,14 @@ export enum InteractionResponseType {
   ACKWithSource = 5,
 }
 
+export enum InteractionResponseFlags {
+  EPHEMERAL = 64,
+}
+
 export interface InteractionApplicationCommandCallbackData {
   tts?: boolean;
-  content: string;
+  content?: string;
+  flags?: InteractionResponseFlags;
   embeds?: (EmbedBuilder | EmbedJSON)[];
   allowed_mentions?: AllowedMentions;
 }

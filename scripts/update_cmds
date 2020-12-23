@@ -1,19 +1,21 @@
 add_command() {
-  url="https://discord.com/api/v8/applications/$APPLICATION_ID/commands"
+  endpoint="/applications/$APPLICATION_ID/commands"
 
   if [ ! -z "$GUILD" ]; then
-    url="https://discord.com/api/v8/applications/$APPLICATION_ID/guilds/$GUILD/commands"
+    endpoint="/applications/$APPLICATION_ID/guilds/$GUILD/commands"
   fi
 
   curl -s \
-    --url "$url" \
+    --url "https://discord.com/api/v8${endpoint}" \
     -X POST \
     -H "Authorization: Bot $DISCORD_TOKEN" \
     -H "Content-Type: application/json" \
     -d @"$1" \
-    | jq
+    | (jq || cat) 2>/dev/null
 }
 
 for file in ./cmds/*.json; do
   add_command $file
 done
+
+# vim:ft=sh

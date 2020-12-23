@@ -1,1 +1,2 @@
-console.log('soon:tm:');
+import 'dotenv/config';
+import './server';

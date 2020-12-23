@@ -1,6 +1,6 @@
 import express, {json} from 'express';
-import {slashCmdAuth} from './server/auth';
-import {handleCommands} from './server/handleCommands';
+import {slashCmdAuth} from './auth';
+import {handleCommands} from './handleCommands';
 
 const PORT = 8080;
 const PUBLIC_KEY = process.env.PUBLIC_KEY!;

@@ -14,12 +14,6 @@
         "description": "The role to add",
         "type": 8,
         "required": true
-      },
-      {
-        "name": "channel",
-        "description": "Which status page subscription should ping the provided role. Defaults to current channel",
-        "type": 7,
-        "required": false
       }]
     },
     {
@@ -31,24 +25,12 @@
         "description": "The role to remove",
         "type": 8,
         "required": true
-      },
-      {
-        "name": "channel",
-        "description": "Which status page subscription should the role pings be removed from. Defaults to current channel",
-        "type": 7,
-        "required": false
       }]
     },
     {
       "name": "get",
       "description": "Show which roles will be pinged",
-      "type": 1,
-      "options": [{
-        "name": "channel",
-        "description": "Show only one channel. Shows all channels if omitted",
-        "type": 7,
-        "required": false
-      }]
+      "type": 1
     }]
   },
   {
@@ -58,24 +40,54 @@
     "options": [{
       "name": "edit",
       "description": "Edit the original message instead of posting a new message with each incident update.",
-      "type": 1,
-      "options": [{
-        "name": "channel",
-        "description": "Which channel to modify",
-        "type": 7,
-        "required": false
-      }]
+      "type": 1
     },
     {
       "name": "post",
       "description": "Post a new message with each incident update",
+      "type": 1
+    }]
+  },
+  {
+    "name": "username",
+    "description": "Change the name of the webhook",
+    "type": 2,
+    "options": [{
+      "name": "set",
+      "description": "Set the name of the webhook",
       "type": 1,
       "options": [{
-        "name": "channel",
-        "description": "Which channel to modify",
-        "type": 7,
-        "required": false
+        "name": "name",
+        "description": "The new name for the webhook",
+        "type": 3,
+        "required": true
       }]
+    },
+    {
+      "name": "reset",
+      "description": "Use the default username",
+      "type": 1
+    }]
+  },
+  {
+    "name": "avatar",
+    "description": "Change the avatar of the webhook",
+    "type": 2,
+    "options": [{
+      "name": "set",
+      "description": "Set the avatar URL for the webhook",
+      "type": 1,
+      "options": [{
+        "name": "name",
+        "description": "The avatar URL",
+        "type": 3,
+        "required": true
+      }]
+    },
+    {
+      "name": "reset",
+      "description": "Use the default avatar",
+      "type": 1
     }]
   }]
 }
