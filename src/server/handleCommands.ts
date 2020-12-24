@@ -4,7 +4,7 @@ import {
   InteractionResponseType,
 } from '../util/Interaction';
 import {Request, Response} from 'express';
-import {allCmdJson} from '../util';
+import {allCmdJson, INVITE_URL} from '../util';
 import extendedHelp from '../../cmds/help_text.json';
 import {Webhook} from '../util/Webhook';
 import {Webhooks} from '../db/models';
@@ -70,7 +70,7 @@ export async function handleCommands(
         type: InteractionResponseType.ChannelMessage,
         data: {
           flags: InteractionResponseFlags.EPHEMERAL,
-          content: '<insert link here lol>',
+          content: INVITE_URL,
         },
       });
 
@@ -169,6 +169,18 @@ export async function handleCommands(
 
         console.error(err);
       }
+
+      break;
+    }
+
+    case 'support': {
+      await i.send({
+        type: InteractionResponseType.ChannelMessage,
+        data: {
+          flags: InteractionResponseFlags.EPHEMERAL,
+          content: `https://discord.gg/${process.env.SUPPORT_SERVER!}`,
+        },
+      });
 
       break;
     }

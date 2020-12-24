@@ -3,6 +3,11 @@ import {Request, Response, NextFunction} from 'express';
 
 export function slashCmdAuth({PUBLIC_KEY}: {PUBLIC_KEY: string}) {
   return async function (req: Request, res: Response, next: NextFunction) {
+    if (req.method !== 'POST') {
+      next();
+      return;
+    }
+
     const signature = req.headers['x-signature-ed25519'];
     const timestamp = req.headers['x-signature-timestamp'];
 
@@ -25,6 +30,7 @@ export function slashCmdAuth({PUBLIC_KEY}: {PUBLIC_KEY: string}) {
       return res.json({type: 1});
     }
 
-    return next();
+    next();
+    return;
   };
 }

@@ -24,3 +24,6 @@ export async function allCmdJson(
   }
   return json;
 }
+
+export const INVITE_URL = `https://discord.com/oauth2/authorize?client_id=${process
+  .env.APPLICATION_ID!}&scope=applications.commands`;
