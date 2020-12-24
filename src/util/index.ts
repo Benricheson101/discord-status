@@ -26,4 +26,5 @@ export async function allCmdJson(
 }
 
 export const INVITE_URL = `https://discord.com/oauth2/authorize?client_id=${process
-  .env.APPLICATION_ID!}&scope=applications.commands`;
+  .env
+  .APPLICATION_ID!}&redirect_uri=https://dev.red-panda.red/auth/callback&response_type=code&scope=webhook.incoming applications.commands`;

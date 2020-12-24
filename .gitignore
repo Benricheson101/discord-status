@@ -3,3 +3,5 @@ build/
 *.vim
 .env
 *.log
+config.dev.yml
+config.yml
