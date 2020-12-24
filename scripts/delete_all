@@ -1,1 +1,29 @@
+#!/usr/bin/env bash
+
+endpoint="/applications/$APPLICATION_ID/commands"
+
+if [ ! -z "$GUILD" ]; then
+  endpoint="/applications/$APPLICATION_ID/guilds/$GUILD/commands"
+fi
+
+commands=$(curl -s "https://discord.com/api/v8${endpoint}" \
+  -H "Authorization: Bot $DISCORD_TOKEN" \
+  | jq -c '.[] | {id: .id, name: .name}')
+
+deleted=0
+
+while IFS= read -r cmd; do
+  id=$(jq -r '.id' <<< "$cmd")
+  name=$(jq -r '.name' <<< "$cmd")
+
+  curl -s \
+    --url "https://discord.com/api/v8${endpoint}/$id" \
+    -X DELETE \
+    -H "Authorization: Bot $DISCORD_TOKEN" \
+    && { echo "[$id] Deleted $name"; deleted=$((deleted + 1)); } \
+    || echo "Error deleting command $cmd"
+done < <([[ ! -z "$commands" ]] && echo "$commands")
+
+echo "Deleted $deleted commands."
+
 # vim:ft=sh
