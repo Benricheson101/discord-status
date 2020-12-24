@@ -100,25 +100,18 @@ export interface ApplicationCommandInteractionData {
   name: string;
   options?: ApplicationCommandInteractionDataOption[];
 }
-export interface BaseCommandInteractionOptions {
-  name: string;
-}
-
-export interface CommandInteractionOptionsWithOptions
-  extends BaseCommandInteractionOptions {
-  options: ApplicationCommandInteractionDataOption;
-  value?: never;
-}
-
-export interface CommandInteractionOptionsWithValue
-  extends BaseCommandInteractionOptions {
-  options?: never;
-  value: string;
-}
 
 export type ApplicationCommandInteractionDataOption =
-  | CommandInteractionOptionsWithOptions
-  | CommandInteractionOptionsWithValue;
+  | {
+      name: string;
+      options: ApplicationCommandInteractionDataOption[];
+      value?: never;
+    }
+  | {
+      name: string;
+      options?: never;
+      value: string | number | boolean;
+    };
 
 export interface InteractionResponse {
   type: InteractionResponseType;

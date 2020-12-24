@@ -1,4 +1,17 @@
 {
   "name": "help",
-  "description": "Learn what each of my commands do"
+  "description": "Learn what each of my commands do",
+  "options": [{
+    "name": "page",
+    "description": "Learn more about specific parts of the application",
+    "type": 3,
+    "choices": [{
+      "name": "Subscribing to status page updates",
+      "value": "subscribe"
+    },
+    {
+      "name": "Creating a webhook",
+      "value": "webhook"
+    }]
+  }]
 }

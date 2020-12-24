@@ -1,10 +1,4 @@
 {
   "name": "unsubscribe",
-  "description": "Unsubscribe from Discord status updates",
-  "options": [{
-    "name": "channel",
-    "description": "Stop receiving updates in this channel",
-    "type": 7,
-    "required": true
-  }]
+  "description": "Unsubscribe from Discord status updates"
 }

@@ -1,5 +1,11 @@
+ignore_files=(
+  "help_text.json"
+)
+
 add_command() {
   endpoint="/applications/$APPLICATION_ID/commands"
+
+  printf '%s\0' "${ignore_files[@]}" | grep -Fqz "$(basename $1)" && return;
 
   if [ ! -z "$GUILD" ]; then
     endpoint="/applications/$APPLICATION_ID/guilds/$GUILD/commands"

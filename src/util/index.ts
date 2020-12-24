@@ -5,10 +5,15 @@ import {resolve} from 'path';
 import {promises} from 'fs';
 const {readdir} = promises;
 
-export async function allCmdJson(dir: string): Promise<ApplicationCommand[]> {
-  console.log('allCmdJson function call');
+export async function allCmdJson(
+  dir: string,
+  ignore = ['help_text.json']
+): Promise<ApplicationCommand[]> {
   const files = await readdir(dir, {encoding: 'utf-8', withFileTypes: true});
-  const jsonFiles = files.map(f => f.name).filter(f => f.endsWith('.json'));
+  const jsonFiles = files
+    .map(f => f.name)
+    .sort()
+    .filter(f => f.endsWith('.json') && !ignore.includes(f));
 
   const json: ApplicationCommand[] = [];
 

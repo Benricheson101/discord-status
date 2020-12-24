@@ -2,6 +2,11 @@
   "name": "config",
   "description": "Customize the status updates",
   "options": [{
+    "name": "get",
+    "description": "Show the current configuration",
+    "type": 1
+  },
+  {
     "name": "roles",
     "description": "Ping a role when the status page is updated",
     "type": 2,

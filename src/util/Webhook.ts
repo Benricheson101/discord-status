@@ -1,37 +1,53 @@
-import axios, {AxiosResponse} from 'axios';
+import axios, {AxiosInstance, AxiosResponse} from 'axios';
 import {EmbedBuilder, EmbedJSON} from './EmbedBuilder';
 
 export class Webhook {
   ['constructor']!: typeof Webhook;
 
-  token: string;
-  id: string;
+  axios: AxiosInstance = axios.create({validateStatus: null});
+
+  token!: string;
+  id!: string;
+
+  avatar_url?: string;
+  username?: string;
 
   constructor(
     hook:
       | string
       | {
-          id: NonNullable<WebhookResponse['id']>;
-          token: NonNullable<WebhookResponse['token']>;
+          id: string;
+          token: string;
+          avatar_url?: string;
+          username?: string;
         }
   ) {
     if (typeof hook === 'string') {
-      hook = this.constructor.parse(hook);
+      const parsed = this.constructor.parse(hook);
+
+      if (!parsed) {
+        throw new Error('invalid webhook');
+      }
+
+      hook = parsed;
     }
 
-    this.token = hook.token;
-    this.id = hook.id;
+    if (!hook.token || !hook.id) {
+      throw new Error('invalid webhook.');
+    }
+
+    Object.assign(this, hook);
   }
 
-  async get(): Promise<WebhookResponse> {
-    const result = await axios.get(this.URL);
-    return result.data;
+  async get(): Promise<WebhookResponse & {status: number}> {
+    const result = await this.axios.get(this.URL);
+    return {...result.data, status: result.status};
   }
 
   async send(body: WebhookBody): Promise<RichWebhookPostResult> {
-    const result: AxiosResponse<WebhookPostResult> = await axios.post(
+    const result: AxiosResponse<WebhookPostResult> = await this.axios.post(
       `${this.URL}?wait=1`,
-      body
+      this.formatBody(body)
     );
 
     return this.makeRich(result.data);
@@ -41,19 +57,19 @@ export class Webhook {
     msg: string,
     body: Pick<WebhookBody, 'content' | 'embeds' | 'allowed_mentions'>
   ): Promise<RichWebhookPostResult> {
-    const result = await axios.patch(`${this.URL}/messages/${msg}`, body);
+    const result = await this.axios.patch(`${this.URL}/messages/${msg}`, body);
 
     return this.makeRich(result.data);
   }
 
   async deleteMsg(msg: string): Promise<boolean> {
-    const result = await axios.delete(`${this.URL}/messages/${msg}`);
+    const result = await this.axios.delete(`${this.URL}/messages/${msg}`);
 
     return result.status === 204;
   }
 
   async delete() {
-    const result = await axios.delete(this.URL);
+    const result = await this.axios.delete(this.URL);
 
     return result.status === 204;
   }
@@ -69,14 +85,21 @@ export class Webhook {
     return r as RichWebhookPostResult;
   }
 
+  private formatBody(body: WebhookBody): WebhookBody {
+    const defaults = {
+      username: this.username,
+      avatar_url: this.avatar_url,
+    };
+
+    return {...defaults, ...body};
+  }
+
   get URL(): string {
     return `https://discord.com/api/webhooks/${this.id}/${this.token}`;
   }
 
   async isValid(): Promise<boolean> {
-    const res: AxiosResponse<WebhookResponse> = await axios.get(this.URL, {
-      validateStatus: null, // don't throw if status isn't 2xx
-    });
+    const res: AxiosResponse<WebhookResponse> = await this.axios.get(this.URL);
 
     return res.status === 200 && res.data.id === this.id;
   }
@@ -86,12 +109,13 @@ export class Webhook {
   ): {
     id: NonNullable<WebhookResponse['id']>;
     token: NonNullable<WebhookResponse['token']>;
-  } {
-    const re = /^(?:https?:\/\/)(?:canary.|ptb.)?discord(?:app)?.com\/api\/webhooks\/(?<id>\d{16,18})\/(?<token>[-_A-Za-z0-9.]+)(\?.*)?$/;
+  } | null {
+    const re = /^(?:https?:\/\/)?(?:canary.|ptb.)?discord(?:app)?.com\/api\/webhooks\/(?<id>\d{16,18})\/(?<token>[-_A-Za-z0-9.]+)(\?.*)?$/;
     const groups = re.exec(hook)?.groups;
 
     if (!(groups?.token && groups?.id)) {
-      throw new TypeError('Invalid webhook');
+      // throw new TypeError('Invalid webhook');
+      return null;
     }
 
     return {
@@ -100,10 +124,17 @@ export class Webhook {
     };
   }
 
-  toJSON(): {id: string; token: string} {
+  toJSON(): {
+    id: string;
+    token: string;
+    username?: string;
+    avatar_url?: string;
+  } {
     return {
       id: this.id,
       token: this.token,
+      username: this?.username,
+      avatar_url: this?.avatar_url,
     };
   }
 }
