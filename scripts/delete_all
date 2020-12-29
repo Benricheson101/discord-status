@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source ../.env
+
 endpoint="/applications/$APPLICATION_ID/commands"
 
 if [ ! -z "$GUILD" ]; then

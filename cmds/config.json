@@ -52,47 +52,5 @@
       "description": "Post a new message with each incident update",
       "type": 1
     }]
-  },
-  {
-    "name": "username",
-    "description": "Change the name of the webhook",
-    "type": 2,
-    "options": [{
-      "name": "set",
-      "description": "Set the name of the webhook",
-      "type": 1,
-      "options": [{
-        "name": "name",
-        "description": "The new name for the webhook",
-        "type": 3,
-        "required": true
-      }]
-    },
-    {
-      "name": "reset",
-      "description": "Use the default username",
-      "type": 1
-    }]
-  },
-  {
-    "name": "avatar",
-    "description": "Change the avatar of the webhook",
-    "type": 2,
-    "options": [{
-      "name": "set",
-      "description": "Set the avatar URL for the webhook",
-      "type": 1,
-      "options": [{
-        "name": "name",
-        "description": "The avatar URL",
-        "type": 3,
-        "required": true
-      }]
-    },
-    {
-      "name": "reset",
-      "description": "Use the default avatar",
-      "type": 1
-    }]
   }]
 }

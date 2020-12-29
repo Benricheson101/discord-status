@@ -36,7 +36,10 @@ export class Webhook {
       throw new Error('invalid webhook.');
     }
 
-    Object.assign(this, hook);
+    // Object.assign(this, hook);
+
+    this.id = hook.id;
+    this.token = hook.token;
   }
 
   async get(): Promise<WebhookResponse & {status: number}> {
@@ -100,6 +103,8 @@ export class Webhook {
 
   async isValid(): Promise<boolean> {
     const res: AxiosResponse<WebhookResponse> = await this.axios.get(this.URL);
+
+    console.log('req to: ', this.URL, res.data);
 
     return res.status === 200 && res.data.id === this.id;
   }

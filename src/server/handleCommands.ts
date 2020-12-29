@@ -7,7 +7,7 @@ import {Request, Response} from 'express';
 import {allCmdJson, INVITE_URL} from '../util';
 import extendedHelp from '../../cmds/help_text.json';
 import {Webhook} from '../util/Webhook';
-import {Webhooks} from '../db/models';
+import {GuildModel} from '../db/models';
 
 const commands = allCmdJson('cmds');
 
@@ -25,6 +25,196 @@ export async function handleCommands(
 
   switch (i.data.name) {
     case 'config': {
+      const permissions = i.member.permissions;
+
+      if (
+        (parseInt(permissions) & MANAGE_WEBHOOKS) !== MANAGE_WEBHOOKS &&
+        (parseInt(permissions) & ADMINISTRATOR) !== ADMINISTRATOR
+      ) {
+        await i.send({
+          type: InteractionResponseType.ChannelMessage,
+          data: {
+            flags: InteractionResponseFlags.EPHEMERAL,
+            content: 'You do not have permission to use this command.',
+          },
+        });
+
+        break;
+      }
+
+      const subcmd = i.data!.options![0];
+
+      const doc = await GuildModel.get(i.guild_id);
+
+      if (!doc) {
+        await i.send({
+          type: InteractionResponseType.ChannelMessage,
+          data: {
+            flags: InteractionResponseFlags.EPHEMERAL,
+            content:
+              'I have not been configured for this server. Authorize using the link from `/invite` and try again.',
+          },
+        });
+
+        break;
+      }
+
+      switch (subcmd.name) {
+        case 'roles': {
+          const action = subcmd.options![0];
+          console.log('action:', action);
+
+          try {
+            switch (action.name) {
+              case 'add': {
+                const rId = action.options!.find(o => o.name === 'role')!.value;
+
+                if (doc.config.roles.includes(rId)) {
+                  await i.send({
+                    type: InteractionResponseType.ChannelMessage,
+                    data: {
+                      flags: InteractionResponseFlags.EPHEMERAL,
+                      content:
+                        'This role is already configured to be pinged when the status page updates.',
+                    },
+                  });
+
+                  break;
+                }
+
+                doc.config.roles.push(action.options![0].value);
+
+                await doc.save();
+
+                await i.send({
+                  type: InteractionResponseType.ChannelMessage,
+                  data: {
+                    flags: InteractionResponseFlags.EPHEMERAL,
+                    content: `<@&${rId}> has been added to the role ping list.`,
+                  },
+                });
+                break;
+              }
+
+              case 'remove': {
+                const rId = action.options!.find(o => o.name === 'role')!.value;
+
+                if (!doc.config.roles.includes(rId)) {
+                  await i.send({
+                    type: InteractionResponseType.ChannelMessage,
+                    data: {
+                      flags: InteractionResponseFlags.EPHEMERAL,
+                      content: 'This role has not configured to be pinged.',
+                    },
+                  });
+
+                  break;
+                }
+
+                doc.config.roles = doc.config.roles.filter(
+                  (r: string) => r !== rId
+                );
+
+                await doc.save();
+
+                await i.send({
+                  type: InteractionResponseType.ChannelMessage,
+                  data: {
+                    flags: InteractionResponseFlags.EPHEMERAL,
+                    content: `<@&${rId}> has been removed from the role ping list.`,
+                  },
+                });
+
+                break;
+              }
+
+              case 'get': {
+                await i.send({
+                  type: InteractionResponseType.ChannelMessage,
+                  data: {
+                    flags: InteractionResponseFlags.EPHEMERAL,
+                    content: `When the status page updates, the following roles will be pinged (${
+                      doc.config.roles.length
+                    }):\n> ${
+                      doc.config.roles
+                        .map((r: string) => `<@&${r}>`)
+                        .join(', ') || 'none'
+                    }`,
+                  },
+                });
+                break;
+              }
+            }
+          } catch (err) {
+            await sendGenericError();
+            console.error(err);
+          }
+          break;
+        }
+
+        case 'mode': {
+          const modes = ['edit', 'post'];
+
+          const mode = subcmd.options![0].name;
+
+          if (!modes.includes(mode)) {
+            await i.send({
+              type: InteractionResponseType.ChannelMessage,
+              data: {
+                flags: InteractionResponseFlags.EPHEMERAL,
+                content: 'Unknown mode.',
+              },
+            });
+
+            break;
+          }
+
+          if (doc.config.mode === mode) {
+            await i.send({
+              type: InteractionResponseType.ChannelMessage,
+              data: {
+                flags: InteractionResponseFlags.EPHEMERAL,
+                content: `Your server is already set to ${mode} mode.`,
+              },
+            });
+
+            break;
+          }
+
+          try {
+            doc.config.mode = mode;
+
+            await doc.save();
+
+            await i.send({
+              type: InteractionResponseType.ChannelMessage,
+              data: {
+                flags: InteractionResponseFlags.EPHEMERAL,
+                content: `Enabled ${mode} mode.`,
+              },
+            });
+            break;
+          } catch (err) {
+            await sendGenericError();
+
+            console.error(err);
+          }
+
+          break;
+        }
+
+        case 'get': {
+          await i.send({
+            type: InteractionResponseType.ChannelMessage,
+            data: {
+              flags: InteractionResponseFlags.EPHEMERAL,
+              content: '```json\n' + JSON.stringify(doc, null, 2) + '```',
+            },
+          });
+
+          break;
+        }
+      }
       break;
     }
 
@@ -128,7 +318,7 @@ export async function handleCommands(
         break;
       }
 
-      const found = await Webhooks.findById(data.guild_id);
+      const found = await GuildModel.get(data.guild_id);
 
       if (found) {
         await i.send({
@@ -143,7 +333,7 @@ export async function handleCommands(
         break;
       }
 
-      const dbWh = await Webhooks.from(wh);
+      const dbWh = await GuildModel.from(wh);
 
       try {
         await dbWh.save();
@@ -158,14 +348,7 @@ export async function handleCommands(
 
         break;
       } catch (err) {
-        await i.send({
-          type: InteractionResponseType.ChannelMessage,
-          data: {
-            flags: InteractionResponseFlags.EPHEMERAL,
-            content:
-              'An unhandled error occurred, try running the command again. If this continues happening, join the support server (`/support`) for help.',
-          },
-        });
+        await sendGenericError();
 
         console.error(err);
       }
@@ -208,7 +391,7 @@ export async function handleCommands(
           n: number;
           ok: 1 | 0;
           deletedCount: number;
-        } = await Webhooks.deleteOne({_id: i.guild_id});
+        } = await GuildModel.deleteOne({guild_id: i.guild_id}).exec();
 
         if (result.n && result.ok) {
           await i.send({
@@ -234,14 +417,7 @@ export async function handleCommands(
           throw new Error();
         }
       } catch (err) {
-        await i.send({
-          type: InteractionResponseType.ChannelMessage,
-          data: {
-            flags: InteractionResponseFlags.EPHEMERAL,
-            content:
-              'An unhandled error occurred, try running the command again. If this continues happening, join the support server (`/support`) for help.',
-          },
-        });
+        await sendGenericError();
 
         if (err.message) {
           console.error(err);
@@ -253,4 +429,15 @@ export async function handleCommands(
   }
 
   return res.status(200).send('OK');
+
+  async function sendGenericError() {
+    return i.send({
+      type: InteractionResponseType.ChannelMessage,
+      data: {
+        flags: InteractionResponseFlags.EPHEMERAL,
+        content:
+          'An unhandled error occurred, try running the command again. If this continues happening, join the support server (`/support`) for help.',
+      },
+    });
+  }
 }

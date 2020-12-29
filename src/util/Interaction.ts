@@ -24,7 +24,7 @@ export class Interaction {
     return result.data;
   }
 
-  async editMsg(body: WebhookBody, id = '@original') {
+  async edit(body: WebhookBody, id = '@original') {
     const result = await axios.patch(
       `${this.webhookURL}/messages/${id}`,
       body,
@@ -41,7 +41,8 @@ export class Interaction {
   }
 
   get webhookURL() {
-    return `https://discord.com/api/v8/webhooks/662416455366737949/${this.token}`;
+    return `https://discord.com/api/v8/webhooks/${process.env
+      .APPLICATION_ID!}/${this.token}`;
   }
 }
 

@@ -1,7 +1,7 @@
 import {Request, Response} from 'express';
 import axios from 'axios';
 import {Webhook} from '../util/Webhook';
-import {Webhooks} from '../db/models';
+import {GuildModel} from '../db/models';
 
 export async function oauth2(
   req: Request<
@@ -16,12 +16,12 @@ export async function oauth2(
   res: Response
 ) {
   if (!req.query.code || !req.query.guild_id) {
-    return res.render('error');
+    return res.redirect('/');
   }
 
   const gid = /\d{16,18}/.exec(req.query.guild_id);
 
-  const found = await Webhooks.findById(gid?.input);
+  const found = await GuildModel.get(gid?.input);
 
   if (found) {
     return res
@@ -36,7 +36,7 @@ export async function oauth2(
     client_secret: process.env.CLIENT_SECRET!,
     grant_type: 'authorization_code',
     code: req.query.code,
-    redirect_uri: 'https://dev.red-panda.red/auth/callback',
+    redirect_uri: 'https://test.red-panda.red/auth/callback',
     scope: 'webhooks.incoming applications.commands',
   };
 
@@ -50,18 +50,18 @@ export async function oauth2(
   });
 
   if (result.status !== 200) {
-    return res.render('error', {error: result.data});
+    return res.render('error');
   }
 
   const wh = new Webhook(result.data.webhook.url);
-  const whs = await Webhooks.from(wh);
+  const whs = await GuildModel.from(wh);
 
   try {
     await whs.save();
   } catch (error) {
     await wh.delete();
 
-    return res.render('error', {error});
+    return res.render('error');
   }
 
   return res.render('success');
