@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-source ../.env
-
 ignore_files=(
   "help_text.json"
   "subscribe.json"

@@ -1,0 +1,15 @@
+{
+  "name": "status",
+  "description": "Get the current status of various Discord components",
+  "options": [
+  {
+    "name": "summary",
+    "description": "General summary of the status page",
+    "type": 1
+  },
+  {
+    "name": "voice",
+    "description": "Voice server status",
+    "type": 1
+  }]
+}

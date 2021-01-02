@@ -4,14 +4,16 @@ import {
   InteractionResponseType,
 } from '../util/Interaction';
 import {Request, Response} from 'express';
-import {allCmdJson, INVITE_URL} from '../util';
+import {allCmdJson, INVITE_URL, statusEmojis, statusToWords} from '../util';
 import extendedHelp from '../../cmds/help_text.json';
 import {Webhook} from '../util/Webhook';
 import {GuildModel} from '../db/models';
+import {Statuspage} from 'statuspage.js';
+import {capitalize} from '../util';
 
 const commands = allCmdJson('cmds');
 
-type ExtendedHelp = Record<string, 'subscribe'>;
+type ExtendedHelp = Record<string, 'subscribe' | 'webhook'>;
 
 const MANAGE_WEBHOOKS = 536870912;
 const ADMINISTRATOR = 8;
@@ -69,7 +71,7 @@ export async function handleCommands(
               case 'add': {
                 const rId = action.options!.find(o => o.name === 'role')!.value;
 
-                if (doc.config.roles.includes(rId)) {
+                if (doc.config.roles.includes(rId as string)) {
                   await i.send({
                     type: InteractionResponseType.ChannelMessage,
                     data: {
@@ -82,7 +84,7 @@ export async function handleCommands(
                   break;
                 }
 
-                doc.config.roles.push(action.options![0].value);
+                doc.config.roles.push(action.options![0].value as string);
 
                 await doc.save();
 
@@ -99,7 +101,7 @@ export async function handleCommands(
               case 'remove': {
                 const rId = action.options!.find(o => o.name === 'role')!.value;
 
-                if (!doc.config.roles.includes(rId)) {
+                if (!doc.config.roles.includes(rId as string)) {
                   await i.send({
                     type: InteractionResponseType.ChannelMessage,
                     data: {
@@ -267,6 +269,68 @@ export async function handleCommands(
       break;
     }
 
+    case 'status': {
+      const s = new Statuspage(process.env.STATUSPAGE_ID!);
+      const component = i.data!.options![0];
+
+      const summary = await s.summary();
+      const voiceComponentIds = summary.components?.find(
+        c => c.name === 'Voice'
+      )?.components;
+
+      let content = 'No available data.';
+
+      switch (component.name) {
+        case 'summary': {
+          const notVoiceComponents = summary.components
+            ?.filter(c => !voiceComponentIds?.includes(c.id))
+            ?.sort((a, b) => (a.name > b.name ? 1 : -1));
+
+          content =
+            `**Status**: ${summary.status.description}\n` +
+              notVoiceComponents
+                ?.map(
+                  c =>
+                    `> ${statusEmojis(c.status)} **${c.name}**: ${capitalize(
+                      statusToWords(c.status)
+                    )}`
+                )
+                .join('\n') || 'No component data available.';
+          break;
+        }
+
+        case 'voice': {
+          const voiceComponents = voiceComponentIds
+            ?.map(c => summary.components?.find(a => a.id === c) || null)
+            .filter(Boolean)
+            .sort((a, b) => (a!.name > b!.name ? 1 : -1));
+
+          content =
+            '**Voice Server Status**:\n' +
+              voiceComponents
+                ?.map(
+                  c =>
+                    c &&
+                    `> ${statusEmojis(c.status)} **${c.name}**: ${capitalize(
+                      statusToWords(c.status)
+                    )}`
+                )
+                .join('\n') || 'No voice data available.';
+          break;
+        }
+      }
+
+      await i.send({
+        type: InteractionResponseType.ChannelMessage,
+        data: {
+          flags: InteractionResponseFlags.EPHEMERAL,
+          content,
+        },
+      });
+
+      break;
+    }
+
     case 'subscribe': {
       const permissions = i.member.permissions;
 
@@ -388,9 +452,9 @@ export async function handleCommands(
 
       try {
         const result: {
-          n: number;
-          ok: 1 | 0;
-          deletedCount: number;
+          n?: number;
+          ok?: number;
+          deletedCount?: number;
         } = await GuildModel.deleteOne({guild_id: i.guild_id}).exec();
 
         if (result.n && result.ok) {
@@ -428,7 +492,7 @@ export async function handleCommands(
     }
   }
 
-  return res.status(200).send('OK');
+  return res.sendStatus(200);
 
   async function sendGenericError() {
     return i.send({

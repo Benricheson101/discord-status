@@ -4,15 +4,14 @@ import {Request, Response, NextFunction} from 'express';
 export function slashCmdAuth({PUBLIC_KEY}: {PUBLIC_KEY: string}) {
   return async function (req: Request, res: Response, next: NextFunction) {
     if (req.method !== 'POST') {
-      next();
-      return;
+      return res.sendStatus(405);
     }
 
     const signature = req.headers['x-signature-ed25519'];
     const timestamp = req.headers['x-signature-timestamp'];
 
     if (!signature || !timestamp) {
-      return res.status(401).send('Unauthorized');
+      return res.sendStatus(401);
     }
 
     const hash = Buffer.concat([
@@ -23,7 +22,7 @@ export function slashCmdAuth({PUBLIC_KEY}: {PUBLIC_KEY: string}) {
     const isSigned = await verify(signature as string, hash, PUBLIC_KEY);
 
     if (!isSigned) {
-      return res.status(401).send('Unauthorized');
+      return res.sendStatus(401);
     }
 
     if (req.body.type === 1) {

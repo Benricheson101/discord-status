@@ -21,7 +21,11 @@ export async function oauth2(
 
   const gid = /\d{16,18}/.exec(req.query.guild_id);
 
-  const found = await GuildModel.get(gid?.input);
+  if (!gid) {
+    return res.sendStatus(422);
+  }
+
+  const found = await GuildModel.get(gid.input);
 
   if (found) {
     return res
