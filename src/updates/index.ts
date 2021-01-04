@@ -2,15 +2,20 @@ import {StatuspageUpdates} from 'statuspage.js';
 import {Guild, GuildModel, Update} from '../db/models';
 import {EditModeEmbed} from '../util/embeds/Edit';
 import {PostModeEmbed} from '../util/embeds/Post';
+import {logger} from '..';
 
-const s = new StatuspageUpdates(process.env.STATUSPAGE_ID!, 5_000);
+const s = new StatuspageUpdates(process.env.STATUSPAGE_ID!);
 
 s.on('incident_update', async i => {
+  logger.incidentUpdate(i);
+
   const update = i.incident_updates[0];
   const guilds = await GuildModel.find();
 
   const postEmbed = new PostModeEmbed(i);
   const editEmbed = new EditModeEmbed(i);
+
+  let successful = 0;
 
   for (const guild of guilds) {
     let s: Update | undefined;
@@ -26,9 +31,11 @@ s.on('incident_update', async i => {
 
         await guild.save();
 
+        successful++;
+
         continue;
       } catch (err) {
-        console.error(err);
+        logger.error(err);
         continue;
       }
     }
@@ -42,7 +49,11 @@ s.on('incident_update', async i => {
     });
 
     await guild.save();
+
+    successful++;
   }
+
+  logger.sentUpdate(successful, guilds.length);
 
   function sendUpdate(guild: Guild, s?: Update) {
     const roles = guild.config.roles.map(r => `<@&${r}>`).join(' ');
@@ -61,4 +72,4 @@ s.on('incident_update', async i => {
   }
 });
 
-s.start();
+s.start().catch(logger.error);

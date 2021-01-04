@@ -9,6 +9,7 @@ export class Interaction {
     Object.assign(this, interaction);
   }
 
+  /** Respond to an interaction */
   async send<
     T = InteractionResponse | WebhookBody,
     U = T extends InteractionResponse ? void : RichWebhookPostResult
@@ -24,6 +25,7 @@ export class Interaction {
     return result.data;
   }
 
+  /** Edit an interaction response */
   async edit(body: WebhookBody, id = '@original') {
     const result = await axios.patch(
       `${this.webhookURL}/messages/${id}`,
@@ -36,13 +38,45 @@ export class Interaction {
     return result.data;
   }
 
+  /** The full command that was used */
+  toString() {
+    const fullcmd: (string | number | boolean)[] = [this.data.name];
+
+    const descend = (s: ApplicationCommandInteractionDataOption[]) => {
+      for (const op of s) {
+        fullcmd.push(op?.value ? `${op.name}:` : op.name);
+
+        if (op.options) {
+          descend(op.options);
+        }
+
+        if (op.value !== undefined) {
+          fullcmd.push(op.value);
+        }
+      }
+    };
+
+    if (this.data.options) {
+      descend(this.data.options);
+    }
+
+    return '/' + fullcmd.join(' ');
+  }
+
+  /** The callback URL for sending an initial response */
   get callbackURL(): string {
     return `https://discord.com/api/v8/interactions/${this.id}/${this.token}/callback`;
   }
 
-  get webhookURL() {
+  /** The webhook URL for responding */
+  get webhookURL(): string {
     return `https://discord.com/api/v8/webhooks/${process.env
       .APPLICATION_ID!}/${this.token}`;
+  }
+
+  /** The full command that was used */
+  get content(): string {
+    return this.toString();
   }
 }
 

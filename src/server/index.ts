@@ -4,6 +4,7 @@ import {handleCommands} from './handleCommands';
 import {INVITE_URL} from '../util';
 import {oauth2} from './oauth';
 import path from 'path';
+import {logger} from '..';
 
 const PORT = 8080;
 const PUBLIC_KEY = process.env.PUBLIC_KEY!;
@@ -24,5 +25,5 @@ app.get('/github', (_req, res) =>
 );
 
 app.listen(PORT, () => {
-  console.log('Listening on port', PORT);
+  logger.info('Listening on port', PORT);
 });

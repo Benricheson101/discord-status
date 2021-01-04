@@ -1,15 +1,21 @@
+import {Request, Response} from 'express';
+import {Statuspage} from 'statuspage.js';
+import {logger} from '..';
+import extendedHelp from '../../cmds/help_text.json';
+import {GuildModel} from '../db/models';
+import {
+  allCmdJson,
+  capitalize,
+  INVITE_URL,
+  statusEmojis,
+  statusToWords,
+} from '../util';
 import {
   Interaction,
   InteractionResponseFlags,
   InteractionResponseType,
 } from '../util/Interaction';
-import {Request, Response} from 'express';
-import {allCmdJson, INVITE_URL, statusEmojis, statusToWords} from '../util';
-import extendedHelp from '../../cmds/help_text.json';
 import {Webhook} from '../util/Webhook';
-import {GuildModel} from '../db/models';
-import {Statuspage} from 'statuspage.js';
-import {capitalize} from '../util';
 
 const commands = allCmdJson('cmds');
 
@@ -23,6 +29,7 @@ export async function handleCommands(
   res: Response
 ) {
   const i = new Interaction(req.body);
+  logger.command(i);
   const cmds = await commands;
 
   switch (i.data.name) {
@@ -148,7 +155,7 @@ export async function handleCommands(
             }
           } catch (err) {
             await sendGenericError();
-            console.error(err);
+            logger.error(err);
           }
           break;
         }
@@ -198,7 +205,7 @@ export async function handleCommands(
           } catch (err) {
             await sendGenericError();
 
-            console.error(err);
+            logger.error(err);
           }
 
           break;
@@ -416,7 +423,7 @@ export async function handleCommands(
       } catch (err) {
         await sendGenericError();
 
-        console.error(err);
+        logger.error(err);
       }
 
       break;
@@ -486,7 +493,7 @@ export async function handleCommands(
         await sendGenericError();
 
         if (err.message) {
-          console.error(err);
+          logger.error(err);
         }
       }
 
