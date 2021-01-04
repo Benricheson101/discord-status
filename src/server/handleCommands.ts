@@ -64,7 +64,6 @@ export async function handleCommands(
       switch (subcmd.name) {
         case 'roles': {
           const action = subcmd.options![0];
-          console.log('action:', action);
 
           try {
             switch (action.name) {
@@ -210,7 +209,7 @@ export async function handleCommands(
             type: InteractionResponseType.ChannelMessage,
             data: {
               flags: InteractionResponseFlags.EPHEMERAL,
-              content: '```json\n' + JSON.stringify(doc, null, 2) + '```',
+              content: doc.config.pretty(),
             },
           });
 
@@ -240,8 +239,11 @@ export async function handleCommands(
         break;
       }
 
+      const hidden = ['test', 'start', 'stop', 'announce'];
+
       const start = '-- **Commands** --\n';
       const c = cmds
+        .filter(c => !hidden.includes(c.name))
         .map(c => `\`${c.name}\` \u21D2 ${c.description}`)
         .join('\n');
       const end = '\n\nNote: most commands have several subcommands.';

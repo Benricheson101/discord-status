@@ -5,22 +5,30 @@ ignore_files=(
   "subscribe.json"
 )
 
-add_command() {
-  endpoint="/applications/$APPLICATION_ID/commands"
+# MODE="GLOBAL"
 
+# [[ -z "$GUILD" ]] || MODE="GUILD"
+
+if [ -z "$GUILD" ]; then
+  MODE="GLOBAL"
+  endpoint="/applications/$APPLICATION_ID/commands"
+else
+  MODE="GUILD"
+  endpoint="/applications/$APPLICATION_ID/guilds/$GUILD/commands"
+fi
+
+add_command() {
   printf '%s\0' "${ignore_files[@]}" | grep -Fqz "$(basename $1)" && return;
 
-  if [ ! -z "$GUILD" ]; then
-    endpoint="/applications/$APPLICATION_ID/guilds/$GUILD/commands"
-  fi
+  [[ $(jq '.guildOnly?' "$1") == "true" && "$MODE" == "GLOBAL" ]] && return;
 
   curl -s \
     --url "https://discord.com/api/v8${endpoint}" \
     -X POST \
     -H "Authorization: Bot $DISCORD_TOKEN" \
     -H "Content-Type: application/json" \
-    -d @"$1" \
-    | (jq || cat) 2>/dev/null
+    -d "$(jq 'del(.guildOnly)' "$1")" \
+    | jq
 }
 
 for file in ./cmds/*.json; do

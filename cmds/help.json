@@ -8,10 +8,6 @@
     "choices": [{
       "name": "Subscribing to status page updates",
       "value": "subscribe"
-    },
-    {
-      "name": "Creating a webhook",
-      "value": "webhook"
     }]
   }]
 }

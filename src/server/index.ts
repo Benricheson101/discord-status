@@ -19,6 +19,9 @@ app.use('/cmds', slashCmdAuth({PUBLIC_KEY}));
 app.get('/', (_req, res) => res.redirect(INVITE_URL));
 app.post('/cmds', handleCommands);
 app.get('/auth/callback', oauth2);
+app.get('/github', (_req, res) =>
+  res.redirect('https://github.com/benricheson101/discord-status')
+);
 
 app.listen(PORT, () => {
   console.log('Listening on port', PORT);

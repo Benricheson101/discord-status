@@ -3,6 +3,7 @@
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "build",
+    "lib": ["ES2019"],
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "experimentalDecorators": true,

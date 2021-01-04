@@ -17,6 +17,7 @@
   "dependencies": {
     "@typegoose/typegoose": "^7.4.5",
     "axios": "^0.21.0",
+    "dayjs": "^1.10.1",
     "dotenv": "^8.2.0",
     "ejs": "^3.1.5",
     "express": "^4.17.1",
@@ -35,5 +36,8 @@
     "prepare": "yarn run compile",
     "pretest": "yarn run compile",
     "posttest": "yarn run lint"
+  },
+  "engines": {
+    "node": ">=14.15.3"
   }
 }

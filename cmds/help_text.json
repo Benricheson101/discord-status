@@ -1,4 +1,3 @@
 {
-  "subscribe": "To use the `/subscribe` command, you first must create a webhook. (refer to `/help Creating a webhook` if you do not know how to do this). Copy the webhook URL and use it in the `/subscribe` command as shown below:\n\n> `/subscribe https://discord.com/api/webhooks/12345.../abcdefg...`\n\nAfter running the command, a message will be posted in the channel the webhook belongs to, confirming a successful setup.",
-  "webhook": "To create a webhook, navigate to the settings page of a text channel and open the `Integrations` tab. Press `New Webhook` and copy the URL. The name and icon of the webhook do not matter, as those can be changed with the `/config` command."
+  "subscribe": "To subscribe to status page updates, run the `/invite` command and open the link the bot sent. You will be prompted to select a server and a channel. Once you press authorize, you should see a message appear in your server confirming a successful setup."
 }

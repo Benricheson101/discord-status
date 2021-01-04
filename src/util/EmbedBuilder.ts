@@ -55,7 +55,7 @@ export class EmbedBuilder {
     return this;
   }
 
-  setFooter(text: string, icon_url: string): EmbedBuilder {
+  setFooter(text: string, icon_url?: string): EmbedBuilder {
     this.footer = {text, icon_url};
     return this;
   }
@@ -75,7 +75,7 @@ export class EmbedBuilder {
     return this;
   }
 
-  setAuthor(name: string, url: string, icon_url: string): EmbedBuilder {
+  setAuthor(name: string, icon_url?: string, url?: string): EmbedBuilder {
     this.author = {name, url, icon_url};
     return this;
   }
@@ -86,9 +86,23 @@ export class EmbedBuilder {
   }
 
   toJSON(): EmbedJSON {
-    return this.timestamp
-      ? {...this, timestamp: this.timestamp?.getTime()}
-      : {...this};
+    const obj = {
+      title: this.title,
+      type: this.type,
+      description: this.description,
+      url: this.url,
+      timestamp: this.timestamp?.getTime(),
+      color: this.color,
+      footer: this.footer,
+      image: this.image,
+      thumbnail: this.thumbnail,
+      video: this.video,
+      provider: this.provider,
+      author: this.author,
+      fields: this.fields,
+    };
+
+    return Object.fromEntries(Object.entries(obj).filter(([, v]) => !!v));
   }
 }
 
@@ -97,7 +111,7 @@ export interface EmbedJSON {
   type?: 'rich' | 'image' | 'video' | 'gifv' | 'article' | 'link';
   description?: string;
   url?: string;
-  timestamp?: Date;
+  timestamp?: Date | number;
   color?: number;
   footer?: {text: string; icon_url?: string; proxy_icon_url?: string};
   image?: {url?: string; proxy_url?: string; height?: number; width?: number};

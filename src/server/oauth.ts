@@ -2,6 +2,7 @@ import {Request, Response} from 'express';
 import axios from 'axios';
 import {Webhook} from '../util/Webhook';
 import {GuildModel} from '../db/models';
+import {EmbedBuilder} from '../util/EmbedBuilder';
 
 export async function oauth2(
   req: Request<
@@ -62,6 +63,23 @@ export async function oauth2(
 
   try {
     await whs.save();
+
+    const embed = new EmbedBuilder()
+      .setAuthor(
+        'Discord Status',
+        'https://discord.com/assets/2c21aeda16de354ba5334551a883b481.png'
+      )
+      .setDescription(
+        'Subscribed to [Discord Status](https://discordstatus.com) updates!'
+      )
+      .setFooter(
+        'To unsubscribe, use the `/unsubscribe` command or delete the integration in Server Settings > Integrations > Discord Status'
+      )
+      .setColor(4437377);
+
+    await wh.send({
+      embeds: [embed],
+    });
   } catch (error) {
     await wh.delete();
 
@@ -70,6 +88,3 @@ export async function oauth2(
 
   return res.render('success');
 }
-
-// TODO: proper error handling
-// TODO: success page
