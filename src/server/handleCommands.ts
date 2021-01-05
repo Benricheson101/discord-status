@@ -280,15 +280,50 @@ export async function handleCommands(
 
     case 'mod': {
       if (
-        !global.config.admins.includes(i.member.user.id) ||
-        !global.config.mods.includes(i.member.user.id)
+        !global.config.admins?.includes(i.member.user.id) &&
+        !global.config.mods?.includes(i.member.user.id)
       ) {
+        // TODO: error message
         return;
       }
       const action = i.data!.options![0];
 
       switch (action.name) {
         case 'announce': {
+          if (!global.config.admins?.includes(i.member.user.id)) {
+            // TODO: error message
+            return;
+          }
+
+          await i.send({
+            type: InteractionResponseType.ChannelMessageWithSource,
+            data: {
+              content: 'Sending your announcement...',
+            },
+          });
+
+          const guilds = await GuildModel.find();
+
+          let success = 0;
+
+          for (const guild of guilds) {
+            await guild.webhook
+              .into()
+              .send({
+                content: `**Announcement from ${i.member.user.username}#${
+                  i.member.user.discriminator
+                }**\n> ${
+                  action?.options?.find(o => o.name === 'announcement')?.value
+                }`,
+              })
+              .then(() => success++)
+              .catch(() => {});
+          }
+
+          await i.send({
+            content: `Successfully sent your announcement to ${success}/${guilds.length} webhooks.`,
+          });
+
           break;
         }
       }

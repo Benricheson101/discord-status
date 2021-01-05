@@ -17,7 +17,17 @@
     "options": [{
       "name": "announcement",
       "description": "The message to send",
-      "type": 3
+      "type": 3,
+      "required": true
+    }]
+  },{
+    "name": "purge",
+    "description": "Clear deleted webhooks from the database",
+    "type": 1,
+    "options": [{
+      "name": "dryrun",
+      "description": "Don't acutally delete anything.",
+      "type": "5"
     }]
   }]
 }
