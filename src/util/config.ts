@@ -33,8 +33,8 @@ export interface Config {
   };
 
   storage: {
-    // multi: boolean;
     mongodb_url: string;
+    auto_purge: boolean;
   };
 
   oauth?: {

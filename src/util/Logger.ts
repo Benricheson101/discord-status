@@ -43,6 +43,14 @@ export class Logger {
     );
   }
 
+  debug(...args: unknown[]) {
+    if (!this.levels.includes(LogLevel.Debug)) {
+      return;
+    }
+
+    console.debug(`\x1b[44;30m${this.date()}\x1b[0m`, ...args);
+  }
+
   incidentUpdate(i: Incident) {
     if (!this.levels.includes(LogLevel.Update)) {
       return;
@@ -101,6 +109,7 @@ export class Logger {
 }
 
 export enum LogLevel {
+  Debug,
   Info,
   Log,
   Command,

@@ -3,6 +3,7 @@ import {Statuspage} from 'statuspage.js';
 import {logger} from '..';
 import extendedHelp from '../../cmds/help_text.json';
 import {GuildModel} from '../db/models';
+import {s} from '../updates';
 import {
   allCmdJson,
   capitalize,
@@ -15,6 +16,7 @@ import {
   InteractionResponseFlags,
   InteractionResponseType,
 } from '../util/Interaction';
+import {purgeWebhooks} from '../util/purgeWebhooks';
 import {Webhook} from '../util/Webhook';
 
 const commands = allCmdJson('cmds');
@@ -40,14 +42,7 @@ export async function handleCommands(
         (parseInt(permissions) & MANAGE_WEBHOOKS) !== MANAGE_WEBHOOKS &&
         (parseInt(permissions) & ADMINISTRATOR) !== ADMINISTRATOR
       ) {
-        await i.send({
-          type: InteractionResponseType.ChannelMessage,
-          data: {
-            flags: InteractionResponseFlags.EPHEMERAL,
-            content: 'You do not have permission to use this command.',
-          },
-        });
-
+        await sendPermError();
         break;
       }
 
@@ -246,7 +241,7 @@ export async function handleCommands(
         break;
       }
 
-      const hidden = ['test', 'start', 'stop', 'announce'];
+      const hidden = ['test', 'mod'];
 
       const start = '-- **Commands** --\n';
       const c = cmds
@@ -283,7 +278,7 @@ export async function handleCommands(
         !global.config.admins?.includes(i.member.user.id) &&
         !global.config.mods?.includes(i.member.user.id)
       ) {
-        // TODO: error message
+        await sendPermError();
         return;
       }
       const action = i.data!.options![0];
@@ -291,8 +286,8 @@ export async function handleCommands(
       switch (action.name) {
         case 'announce': {
           if (!global.config.admins?.includes(i.member.user.id)) {
-            // TODO: error message
-            return;
+            await sendPermError();
+            break;
           }
 
           await i.send({
@@ -322,6 +317,88 @@ export async function handleCommands(
 
           await i.send({
             content: `Successfully sent your announcement to ${success}/${guilds.length} webhooks.`,
+          });
+
+          break;
+        }
+
+        case 'purge': {
+          if (!global.config.admins?.includes(i.member.user.id)) {
+            await sendPermError();
+            break;
+          }
+
+          const dryrun = !!i.data.options?.[0]?.options?.find(
+            o => o.name === 'dryrun'
+          )?.value;
+
+          const result = await purgeWebhooks(dryrun);
+
+          await i.send({
+            type: InteractionResponseType.ChannelMessage,
+            data: {
+              flags: InteractionResponseFlags.EPHEMERAL,
+              content: `**Total**: ${result.total}\n> **Valid**: ${result.valid}\n> **Invalid**: ${result.invalid}\n> **Deleted**: ${result.deleted}`,
+            },
+          });
+
+          if (!dryrun) {
+            logger.log(
+              `[MANUAL] Deleted ${result.deleted}/${result.invalid} invalid webhooks.`
+            );
+          }
+
+          break;
+        }
+
+        case 'start': {
+          if (s.active) {
+            await i.send({
+              type: InteractionResponseType.ChannelMessage,
+              data: {
+                flags: InteractionResponseFlags.EPHEMERAL,
+                content:
+                  'The status page is already being checked for updates.',
+              },
+            });
+
+            break;
+          }
+
+          await s.start();
+
+          await i.send({
+            type: InteractionResponseType.ChannelMessage,
+            data: {
+              flags: InteractionResponseFlags.EPHEMERAL,
+              content: 'Started checking the status page for updates',
+            },
+          });
+
+          break;
+        }
+
+        case 'stop': {
+          if (!s.active) {
+            await i.send({
+              type: InteractionResponseType.ChannelMessage,
+              data: {
+                flags: InteractionResponseFlags.EPHEMERAL,
+                content: 'The status page is not being checked for updates.',
+              },
+            });
+
+            break;
+          }
+
+          s.stop();
+
+          await i.send({
+            type: InteractionResponseType.ChannelMessage,
+            data: {
+              flags: InteractionResponseFlags.EPHEMERAL,
+              content: 'Stopped checking the status page for updates',
+            },
           });
 
           break;
@@ -401,14 +478,7 @@ export async function handleCommands(
         (parseInt(permissions) & MANAGE_WEBHOOKS) !== MANAGE_WEBHOOKS &&
         (parseInt(permissions) & ADMINISTRATOR) !== ADMINISTRATOR
       ) {
-        await i.send({
-          type: InteractionResponseType.ChannelMessage,
-          data: {
-            flags: InteractionResponseFlags.EPHEMERAL,
-            content: 'You do not have permission to use this command.',
-          },
-        });
-
+        await sendPermError();
         break;
       }
 
@@ -505,14 +575,7 @@ export async function handleCommands(
         (parseInt(permissions) & MANAGE_WEBHOOKS) !== MANAGE_WEBHOOKS &&
         (parseInt(permissions) & ADMINISTRATOR) !== ADMINISTRATOR
       ) {
-        await i.send({
-          type: InteractionResponseType.ChannelMessage,
-          data: {
-            flags: InteractionResponseFlags.EPHEMERAL,
-            content: 'You do not have permission to use this command.',
-          },
-        });
-
+        await sendPermError();
         break;
       }
 
@@ -567,6 +630,16 @@ export async function handleCommands(
         flags: InteractionResponseFlags.EPHEMERAL,
         content:
           'An unhandled error occurred, try running the command again. If this continues happening, join the support server (`/support`) for help.',
+      },
+    });
+  }
+
+  async function sendPermError() {
+    return i.send({
+      type: InteractionResponseType.ChannelMessage,
+      data: {
+        flags: InteractionResponseFlags.EPHEMERAL,
+        content: 'You do not have permission to use this command.',
       },
     });
   }

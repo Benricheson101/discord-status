@@ -87,4 +87,9 @@ s.on('incident_update', async i => {
   }
 });
 
+s.on('start', (...args) => logger.debug(...args));
+s.on('run', (...args) => logger.debug(...args));
+s.on('stop', (...args) => logger.debug(...args));
+s.on('incident_update', (...args) => logger.debug(...args));
+
 s.start().catch(logger.error);
