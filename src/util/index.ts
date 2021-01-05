@@ -30,9 +30,20 @@ export async function allCmdJson(
   return json;
 }
 
-export const INVITE_URL = `https://discord.com/oauth2/authorize?client_id=${process
-  .env
-  .APPLICATION_ID!}&redirect_uri=https://test.red-panda.red/auth/callback&response_type=code&scope=webhook.incoming%20applications.commands`;
+export const inviteUrl = (): string | undefined => {
+  const clientId =
+    global.config.oauth?.client_id ||
+    global.config.slash_commands?.application_id ||
+    process.env.CLIENT_ID! ||
+    process.env.APPLICATION_ID!;
+
+  const redirectUri =
+    global.config.oauth?.redirect_uri || process.env.REDIRECT_URI!;
+
+  const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=webhook.incoming%20applications.commands`;
+
+  return clientId && redirectUri && inviteUrl;
+};
 
 export const emojis = {
   green: '<:statusgreen:793333655493279764>',

@@ -70,8 +70,10 @@ export class Interaction {
 
   /** The webhook URL for responding */
   get webhookURL(): string {
-    return `https://discord.com/api/v8/webhooks/${process.env
-      .APPLICATION_ID!}/${this.token}`;
+    return `https://discord.com/api/v8/webhooks/${
+      global.config.slash_commands?.application_id ||
+      process.env.APPLICATION_ID!
+    }/${this.token}`;
   }
 
   /** The full command that was used */

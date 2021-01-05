@@ -1,0 +1,23 @@
+{
+  "name": "mod",
+  "description": "Commands for mod people to use to control the thing",
+  "guildOnly": true,
+  "options": [{
+    "name": "start",
+    "description": "Resume checking for updates",
+    "type": 1
+  },{
+    "name": "stop",
+    "description": "Stop checking for updates",
+    "type": 1
+  },{
+    "name": "announce",
+    "description": "Send a message to all webhooks",
+    "type": 1,
+    "options": [{
+      "name": "announcement",
+      "description": "The message to send",
+      "type": 3
+    }]
+  }]
+}

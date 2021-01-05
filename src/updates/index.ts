@@ -3,8 +3,11 @@ import {Guild, GuildModel, Update} from '../db/models';
 import {EditModeEmbed} from '../util/embeds/Edit';
 import {PostModeEmbed} from '../util/embeds/Post';
 import {logger} from '..';
+import {Webhook} from '../util/Webhook';
 
-const s = new StatuspageUpdates(process.env.STATUSPAGE_ID!);
+export const s = new StatuspageUpdates(
+  global.config.status_page.id || process.env.STATUSPAGE_ID!
+);
 
 s.on('incident_update', async i => {
   logger.incidentUpdate(i);
@@ -53,7 +56,19 @@ s.on('incident_update', async i => {
     successful++;
   }
 
-  logger.sentUpdate(successful, guilds.length);
+  if (global.config.webhooks?.length) {
+    for (const wh of global.config.webhooks) {
+      new Webhook(wh)
+        .send({embeds: [postEmbed]})
+        .then(() => successful++)
+        .catch(logger.error);
+    }
+  }
+
+  logger.sentUpdate(
+    successful,
+    guilds.length + (global.config.webhooks?.length || 0)
+  );
 
   function sendUpdate(guild: Guild, s?: Update) {
     const roles = guild.config.roles.map(r => `<@&${r}>`).join(' ');

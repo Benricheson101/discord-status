@@ -37,8 +37,9 @@ export async function oauth2(
   const endpoint = 'https://discord.com/api/v8/oauth2/token';
 
   const body = {
-    client_id: process.env.CLIENT_ID!,
-    client_secret: process.env.CLIENT_SECRET!,
+    client_id: global.config.oauth?.client_id || process.env.CLIENT_ID,
+    client_secret:
+      global.config.oauth?.client_secret || process.env.CLIENT_SECRET!,
     grant_type: 'authorization_code',
     code: req.query.code,
     redirect_uri: 'https://test.red-panda.red/auth/callback',

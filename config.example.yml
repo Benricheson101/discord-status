@@ -1,0 +1,25 @@
+status_page:
+  id: '' # you can find this by going to https://<your-status-page>/api
+
+slash_commands:
+  enabled: true
+  application_id: ''
+  public_key: ''
+
+storage:
+  multi: true
+  mongodb_url: ''
+
+oauth:
+  enabled: true
+  client_id: ''
+  client_secret: ''
+  redirect_uri: ''
+
+webhooks:
+  - id: ''
+    token: ''
+
+meta:
+  support_server: ''
+

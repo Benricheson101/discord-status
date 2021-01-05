@@ -6,7 +6,7 @@ import {GuildModel} from '../db/models';
 import {
   allCmdJson,
   capitalize,
-  INVITE_URL,
+  inviteUrl,
   statusEmojis,
   statusToWords,
 } from '../util';
@@ -271,15 +271,34 @@ export async function handleCommands(
         type: InteractionResponseType.ChannelMessage,
         data: {
           flags: InteractionResponseFlags.EPHEMERAL,
-          content: INVITE_URL,
+          content: inviteUrl() || 'You cannot invite me to your server.',
         },
       });
 
       break;
     }
 
+    case 'mod': {
+      if (
+        !global.config.admins.includes(i.member.user.id) ||
+        !global.config.mods.includes(i.member.user.id)
+      ) {
+        return;
+      }
+      const action = i.data!.options![0];
+
+      switch (action.name) {
+        case 'announce': {
+          break;
+        }
+      }
+      break;
+    }
+
     case 'status': {
-      const s = new Statuspage(process.env.STATUSPAGE_ID!);
+      const s = new Statuspage(
+        global.config.status_page.id || process.env.STATUSPAGE_ID!
+      );
       const component = i.data!.options![0];
 
       const summary = await s.summary();
@@ -430,11 +449,14 @@ export async function handleCommands(
     }
 
     case 'support': {
+      const code =
+        global.config.meta?.support_server || process.env.SUPPORT_SERVER;
+
       await i.send({
         type: InteractionResponseType.ChannelMessage,
         data: {
           flags: InteractionResponseFlags.EPHEMERAL,
-          content: `https://discord.gg/${process.env.SUPPORT_SERVER!}`,
+          content: code ? `https://discord.gg/${code}` : '¯\\_(ツ)\_/¯', // eslint-disable-line
         },
       });
 
