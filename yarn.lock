@@ -2540,10 +2540,10 @@ sprintf-js@~1.0.2:
   resolved "https://registry.yarnpkg.com/statuses/-/statuses-1.5.0.tgz#161c7dac177659fd9811f43771fa99381478628c"
   integrity sha1-Fhx9rBd2Wf2YEfQ3cfqZOBR4Yow=
 
-statuspage.js@^1.0.15:
-  version "1.0.15"
-  resolved "https://registry.yarnpkg.com/statuspage.js/-/statuspage.js-1.0.15.tgz#410107125871adc1a6d06eb07649d547a1677b6c"
-  integrity sha512-TuNEU39VfDlACnK+ORfQm4jW6esE6kp2Z+tRwh4GBwgccq/Bpcoib8xJHFBEGrZXAqXKYJRYwsdKvsRAnTZPbw==
+statuspage.js@^1.0.17:
+  version "1.0.17"
+  resolved "https://registry.yarnpkg.com/statuspage.js/-/statuspage.js-1.0.17.tgz#0f9b78b598dea49ba2d00784beccaea234efb716"
+  integrity sha512-IFm2wohxQaMS0LD7NqtODbUfjxJ/g2gv/If/koXgjPJw69oVTecdaj7AcHvxGs6OSQ29wK4nKVLL+X4/0jTpMw==
   dependencies:
     axios "^0.21.0"
 

@@ -8,7 +8,7 @@ import {
   allCmdJson,
   capitalize,
   inviteUrl,
-  statusEmojis,
+  getStatusEmoji,
   statusToWords,
 } from '../util';
 import {
@@ -21,7 +21,7 @@ import {Webhook} from '../util/Webhook';
 
 const commands = allCmdJson('cmds');
 
-type ExtendedHelp = Record<string, 'subscribe' | 'webhook'>;
+type ExtendedHelp = Record<string, 'subscribe'>;
 
 const MANAGE_WEBHOOKS = 536870912;
 const ADMINISTRATOR = 8;
@@ -293,7 +293,7 @@ export async function handleCommands(
           await i.send({
             type: InteractionResponseType.ChannelMessageWithSource,
             data: {
-              content: 'Sending your announcement...',
+              content: 'Sending your announcement...This may take a while...',
             },
           });
 
@@ -315,7 +315,7 @@ export async function handleCommands(
               .catch(() => {});
           }
 
-          await i.send({
+          await i.edit({
             content: `Successfully sent your announcement to ${success}/${guilds.length} webhooks.`,
           });
 
@@ -407,6 +407,20 @@ export async function handleCommands(
       break;
     }
 
+    case 'about': {
+      const guilds = await GuildModel.estimatedDocumentCount();
+
+      await i.send({
+        type: InteractionResponseType.ChannelMessage,
+        data: {
+          flags: InteractionResponseFlags.EPHEMERAL,
+          content: `**Guilds**: ${guilds}`,
+        },
+      });
+
+      break;
+    }
+
     case 'status': {
       const s = new Statuspage(
         global.config.status_page.id || process.env.STATUSPAGE_ID!
@@ -431,7 +445,7 @@ export async function handleCommands(
               notVoiceComponents
                 ?.map(
                   c =>
-                    `> ${statusEmojis(c.status)} **${c.name}**: ${capitalize(
+                    `> ${getStatusEmoji(c.status)} **${c.name}**: ${capitalize(
                       statusToWords(c.status)
                     )}`
                 )
@@ -451,7 +465,7 @@ export async function handleCommands(
                 ?.map(
                   c =>
                     c &&
-                    `> ${statusEmojis(c.status)} **${c.name}**: ${capitalize(
+                    `> ${getStatusEmoji(c.status)} **${c.name}**: ${capitalize(
                       statusToWords(c.status)
                     )}`
                 )

@@ -24,13 +24,13 @@
     "js-yaml": "^3.14.1",
     "mongoose": "5.10.18",
     "noble-ed25519": "^1.0.2",
-    "statuspage.js": "^1.0.15"
+    "statuspage.js": "^1.0.17"
   },
   "scripts": {
     "lint": "gts lint",
     "clean": "gts clean",
     "compile": "tsc && cp -r src/server/views build/src/server",
-    "dev": "yarn nodemon --exec 'ts-node src --project tsconfig.json' --ext ts --watch src",
+    "dev": "yarn nodemon --exec 'yarn compile && NODE_ENV=dev node .' --ext ts --watch src",
     "fix": "gts fix",
     "prepare": "yarn run compile",
     "pretest": "yarn run compile",

@@ -1,8 +1,9 @@
 import {Request, Response} from 'express';
 import axios from 'axios';
-import {Webhook} from '../util/Webhook';
+import {Webhook, WebhookResponse} from '../util/Webhook';
 import {GuildModel} from '../db/models';
 import {EmbedBuilder} from '../util/EmbedBuilder';
+import {logger} from '..';
 
 export async function oauth2(
   req: Request<
@@ -42,11 +43,12 @@ export async function oauth2(
       global.config.oauth?.client_secret || process.env.CLIENT_SECRET!,
     grant_type: 'authorization_code',
     code: req.query.code,
-    redirect_uri: 'https://test.red-panda.red/auth/callback',
+    redirect_uri:
+      global.config.oauth?.redirect_uri || process.env.REDIRECT_URI!,
     scope: 'webhooks.incoming applications.commands',
   };
 
-  const result = await axios.post(endpoint, body, {
+  const result = await axios.post<OAuthWebhookResponse>(endpoint, body, {
     validateStatus: null,
     transformRequest(json: Record<string, string>) {
       return Object.entries(json)
@@ -56,6 +58,9 @@ export async function oauth2(
   });
 
   if (result.status !== 200) {
+    logger.server('Discord responded with code', result.status);
+    logger.error(result.data);
+
     return res.render('error');
   }
 
@@ -84,8 +89,32 @@ export async function oauth2(
   } catch (error) {
     await wh.delete();
 
+    logger.error(error);
+
     return res.render('error');
   }
 
+  logger.server(
+    'Created webhook in server with ID:',
+    result.data.webhook.guild_id
+  );
+
   return res.render('success');
+}
+
+export interface OAuthResponse {
+  token_type: 'Bearer' | string;
+  access_token: string;
+  scope: string;
+  expires_in: number;
+  refresh_token: string;
+}
+
+export interface OAuthWebhookResponse extends OAuthResponse {
+  webhook: NonNullable<
+    Pick<
+      WebhookResponse,
+      'name' | 'channel_id' | 'token' | 'avatar' | 'guild_id' | 'id'
+    > & {url: string}
+  >;
 }

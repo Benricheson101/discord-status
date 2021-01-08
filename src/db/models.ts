@@ -32,7 +32,7 @@ export class GuildConfig {
    * - `post` => post a new message every time the status page receives an update
    * - `edit` => send one message when an incident starts and edit in updates as they are published
    */
-  @prop({required: true, enum: ['edit', 'post'], default: 'post'})
+  @prop({required: true, enum: ['edit', 'post'], default: 'edit'})
   mode!: string;
 
   /**

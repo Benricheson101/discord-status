@@ -91,7 +91,7 @@ export class EmbedBuilder {
       type: this.type,
       description: this.description,
       url: this.url,
-      timestamp: this.timestamp?.getTime(),
+      timestamp: this.timestamp,
       color: this.color,
       footer: this.footer,
       image: this.image,

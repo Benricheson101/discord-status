@@ -46,13 +46,14 @@ export const inviteUrl = (): string | undefined => {
 };
 
 export const emojis = {
-  green: '<:statusgreen:793333655493279764>',
-  yellow: '<:statusyellow:793333655157735435>',
-  red: '<:statusred:793333655430627358>',
-  blue: '<:statusblue:793333655451205652>',
+  red: '<:statusred:797222239661457478>',
+  orange: '<:statusorange:797222239979700263>',
+  yellow: '<:statusyellow:797222239522390056>',
+  green: '<:statusgreen:797222239418187786>',
+  blue: '<:statusblue:797222239942475786>',
 };
 
-export function statusEmojis(
+export function getStatusEmoji(
   status: Indicator | IncidentStatus | ComponentStatus
 ): string {
   switch (status) {
@@ -63,12 +64,14 @@ export function statusEmojis(
 
     case 'minor':
     case 'monitoring':
-    case 'investigating': // TODO: orange
     case 'degraded_performance':
-    case 'partial_outage': // TODO: orange
       return emojis.yellow;
 
     case 'major':
+    case 'partial_outage':
+    case 'investigating':
+      return emojis.orange;
+
     case 'identified':
     case 'major_outage':
     case 'critical':

@@ -1,5 +1,5 @@
 import {Incident} from 'statuspage.js';
-import {capitalize} from '..';
+import {capitalize, getStatusEmoji} from '..';
 import {BaseEmbed} from './Base';
 
 export class PostModeEmbed extends BaseEmbed {
@@ -10,17 +10,13 @@ export class PostModeEmbed extends BaseEmbed {
 
     this.fields = [
       {
-        name: `${super.constructor.getStatusEmoji(i.status)} ${capitalize(
-          i.status
-        )}`,
+        name: `${getStatusEmoji(i.status)} ${capitalize(i.status)}`,
         value: i.body,
       },
     ];
 
     this.footer = {
-      text: `Started on ${super.formatDate(
-        incident.created_at
-      )}\nUpdated at ${super.formatDate(incident.updated_at)}`,
+      text: `Updated: ${super.formatDate(incident.updated_at)}\nStarted`,
     };
   }
 }

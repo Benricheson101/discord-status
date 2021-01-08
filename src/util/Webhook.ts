@@ -58,7 +58,10 @@ export class Webhook {
     msg: string,
     body: Pick<WebhookBody, 'content' | 'embeds' | 'allowed_mentions'>
   ): Promise<RichWebhookPostResult> {
-    const result = await this.axios.patch(`${this.URL}/messages/${msg}`, body);
+    const result = await this.axios.patch(
+      `${this.URL}/messages/${msg}`,
+      this.formatBody(body)
+    );
 
     return this.makeRich(result.data);
   }
@@ -78,21 +81,27 @@ export class Webhook {
   private makeRich(data: WebhookPostResult): RichWebhookPostResult {
     const r: Partial<RichWebhookPostResult> = {};
 
-    r.embeds = data.embeds.map(e => new EmbedBuilder(e));
-    r.timestamp = new Date(data.timestamp);
+    r.embeds &&= data.embeds.map(e => new EmbedBuilder(e));
+    r.timestamp &&= new Date(data.timestamp);
     r.edited_timestamp &&= new Date(data.edited_timestamp!);
+
     Object.assign(r, data);
 
     return r as RichWebhookPostResult;
   }
 
   private formatBody(body: WebhookBody): WebhookBody {
-    const defaults = {
+    const obj = {
       username: this.username,
       avatar_url: this.avatar_url,
+      ...body,
     };
 
-    return {...defaults, ...body};
+    obj.embeds &&= obj.embeds?.map(e =>
+      e instanceof EmbedBuilder ? e.toJSON() : e
+    );
+
+    return obj;
   }
 
   get URL(): string {

@@ -1,5 +1,4 @@
 import {EmbedBuilder} from '../EmbedBuilder';
-import {emojis} from '..';
 import {ComponentStatus, IncidentStatus, Indicator} from 'statuspage.js';
 import {Incident} from 'statuspage.js';
 import dayjs from 'dayjs';
@@ -27,40 +26,15 @@ export abstract class BaseEmbed extends EmbedBuilder {
 
     this.url = incident.shortlink;
     this.color = this.constructor.getColor(incident.incident_updates[0].status);
+
+    this.timestamp = new Date(incident.created_at);
     this.footer = {
-      text: `Started on ${this.formatDate(incident.created_at)}`,
+      text: 'Started',
     };
   }
 
   formatDate(d: Date): string {
     return dayjs(d).format('MMMM Do, YYYY [at] h:mm:ss A (z)');
-  }
-
-  static getStatusEmoji(
-    status: Indicator | IncidentStatus | ComponentStatus
-  ): string {
-    switch (status) {
-      case 'none':
-      case 'resolved':
-      case 'operational':
-        return emojis.green;
-
-      case 'minor':
-      case 'monitoring':
-      case 'investigating': // TODO: orange
-      case 'degraded_performance':
-      case 'partial_outage': // TODO: orange
-        return emojis.yellow;
-
-      case 'major':
-      case 'identified':
-      case 'major_outage':
-      case 'critical':
-        return emojis.red;
-
-      case 'postmortem':
-        return emojis.blue;
-    }
   }
 
   static getColor(
@@ -75,13 +49,13 @@ export abstract class BaseEmbed extends EmbedBuilder {
       case 'minor':
       case 'monitoring':
       case 'degraded_performance':
-        return 15922754; // yellow
+        return 15920962; // yellow
 
+      case 'major':
       case 'partial_outage':
       case 'investigating':
         return 15571250; // orange
 
-      case 'major':
       case 'identified':
       case 'major_outage':
       case 'critical':

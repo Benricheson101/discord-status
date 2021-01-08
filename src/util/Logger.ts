@@ -7,8 +7,10 @@ export class Logger {
   ['constructor']!: typeof Logger;
 
   levels: LogLevel[] = [
+    LogLevel.Debug,
     LogLevel.Info,
     LogLevel.Log,
+    LogLevel.Server,
     LogLevel.Command,
     LogLevel.Update,
     LogLevel.Warn,
@@ -65,13 +67,15 @@ export class Logger {
     );
   }
 
-  sentUpdate(success: number, total: number) {
+  sentUpdate(success: number, total: number, time?: number) {
     if (!this.levels.includes(LogLevel.Update)) {
       return;
     }
 
     console.log(
-      `\x1b[46;30m${this.date()}\x1b[0m update sent to ${success}/${total} webhooks`
+      `\x1b[46;30m${this.date()}\x1b[0m update sent to ${success}/${total} webhooks${
+        time && ` in ${time} ms`
+      }`
     );
   }
 
@@ -99,6 +103,14 @@ export class Logger {
     console.log(`\x1b[102;30m${this.date()}\x1b[0m`, ...args);
   }
 
+  server(...args: unknown[]) {
+    if (!this.levels.includes(LogLevel.Server)) {
+      return;
+    }
+
+    console.log(`\x1b[35;30m${this.date()}\x1b[0m`, ...args);
+  }
+
   warn(...args: unknown[]) {
     if (!this.levels.includes(LogLevel.Warn)) {
       return;
@@ -113,6 +125,7 @@ export enum LogLevel {
   Info,
   Log,
   Command,
+  Server,
   Update,
   Warn,
   Error,

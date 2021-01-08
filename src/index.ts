@@ -1,12 +1,16 @@
 import dayjs from 'dayjs';
 import advancedFormat from 'dayjs/plugin/advancedFormat';
+import duration from 'dayjs/plugin/duration';
+import relativeTime from 'dayjs/plugin/relativeTime';
 import timezone from 'dayjs/plugin/timezone';
 import {connect} from 'mongoose';
-import {autoPurge} from './util/purgeWebhooks';
 import {parseConfig} from './util/config';
 import {Logger, LogLevel} from './util/Logger';
+import {autoPurge} from './util/purgeWebhooks';
 
 dayjs.extend(advancedFormat);
+dayjs.extend(duration);
+dayjs.extend(relativeTime);
 dayjs.extend(timezone);
 
 export const logger = new Logger(
@@ -16,6 +20,7 @@ export const logger = new Logger(
         levels: [
           LogLevel.Info,
           LogLevel.Log,
+          LogLevel.Server,
           LogLevel.Command,
           LogLevel.Update,
           LogLevel.Warn,

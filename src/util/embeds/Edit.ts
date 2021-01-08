@@ -1,7 +1,7 @@
 import {Incident, IncidentUpdates} from 'statuspage.js';
 import {BaseEmbed} from './Base';
 import {EmbedJSON} from '../EmbedBuilder';
-import {capitalize} from '..';
+import {capitalize, getStatusEmoji} from '..';
 import dayjs from 'dayjs';
 
 export class EditModeEmbed extends BaseEmbed {
@@ -16,7 +16,7 @@ export class EditModeEmbed extends BaseEmbed {
 
   formatFields(update: IncidentUpdates): NonNullable<EmbedJSON['fields']>[0] {
     return {
-      name: `${super.constructor.getStatusEmoji(update.status)} ${capitalize(
+      name: `${getStatusEmoji(update.status)} ${capitalize(
         update.status
       )} (${dayjs(update.updated_at).format('h:mm:ss A z')})`,
       value: update.body || 'no information available.',
