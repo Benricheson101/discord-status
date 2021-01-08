@@ -414,7 +414,11 @@ export async function handleCommands(
         type: InteractionResponseType.ChannelMessage,
         data: {
           flags: InteractionResponseFlags.EPHEMERAL,
-          content: `**Guilds**: ${guilds}`,
+          content:
+            '**Discord Status**:\n' +
+            '> **Author**: [Ben#0002](https://red-panda.red)\n' +
+            '> **GitHub Repo**: <https://github.com/benricheson101/discord-status>\n' +
+            `> **Guilds**: ${guilds}`,
         },
       });
 
