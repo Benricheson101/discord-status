@@ -5,3 +5,4 @@ build/
 *.log
 config.dev.yml
 config.yml
+src/migration
