@@ -3,6 +3,7 @@ status_page:
 
 slash_commands:
   enabled: true
+  port: 8080
   application_id: ''
   public_key: ''
 
@@ -23,3 +24,8 @@ webhooks:
 meta:
   support_server: ''
 
+admins: # can use `mod announce`
+  - ''
+
+mods: # can use `mod stop` and `mod start`
+  - ''

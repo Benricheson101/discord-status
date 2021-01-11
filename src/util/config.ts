@@ -28,6 +28,7 @@ export interface Config {
 
   slash_commands?: {
     enabled: boolean;
+    port: number;
     application_id: string;
     public_key: string;
   };

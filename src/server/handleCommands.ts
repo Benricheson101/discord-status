@@ -32,7 +32,6 @@ export async function handleCommands(
 ) {
   const i = new Interaction(req.body);
   logger.command(i);
-  const cmds = await commands;
 
   switch (i.data.name) {
     case 'config': {
@@ -244,7 +243,7 @@ export async function handleCommands(
       const hidden = ['test', 'mod'];
 
       const start = '-- **Commands** --\n';
-      const c = cmds
+      const c = (await commands)
         .filter(c => !hidden.includes(c.name))
         .map(c => `\`${c.name}\` \u21D2 ${c.description}`)
         .join('\n');
@@ -299,24 +298,27 @@ export async function handleCommands(
 
           const guilds = await GuildModel.find();
 
-          let success = 0;
+          const body = {
+            content: `**Announcement from ${i.member.user.username}#${
+              i.member.user.discriminator
+            }**\n> ${
+              action?.options?.find(o => o.name === 'announcement')?.value
+            }`,
+          };
 
-          for (const guild of guilds) {
-            await guild.webhook
-              .into()
-              .send({
-                content: `**Announcement from ${i.member.user.username}#${
-                  i.member.user.discriminator
-                }**\n> ${
-                  action?.options?.find(o => o.name === 'announcement')?.value
-                }`,
-              })
-              .then(() => success++)
-              .catch(() => {});
-          }
+          const whs = [
+            ...guilds.map(g => g.webhook),
+            ...(global.config.webhooks || []),
+          ].map(w => new Webhook(w).send(body));
+
+          const sent = await Promise.allSettled(whs);
+
+          const success = sent.filter(
+            s => s.status === 'fulfilled' && s.value?.webhook_id
+          );
 
           await i.edit({
-            content: `Successfully sent your announcement to ${success}/${guilds.length} webhooks.`,
+            content: `Successfully sent your announcement to ${success.length}/${whs.length} webhooks.`,
           });
 
           break;
@@ -418,7 +420,7 @@ export async function handleCommands(
             '**Discord Status**:\n' +
             '> **Author**: [Ben#0002](https://red-panda.red)\n' +
             '> **GitHub Repo**: <https://github.com/benricheson101/discord-status>\n' +
-            `> **Guilds**: ${guilds}`,
+            `> **Webhooks**: ${guilds}`,
         },
       });
 

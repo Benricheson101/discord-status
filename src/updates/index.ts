@@ -29,6 +29,7 @@ s.on('incident_update', async i => {
   ];
 
   const r = await Promise.allSettled(sendTo);
+
   const success = r.filter(
     s => s.status === 'fulfilled' && s.value?.webhook_id
   );

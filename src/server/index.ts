@@ -6,7 +6,7 @@ import {oauth2} from './oauth';
 import path from 'path';
 import {logger} from '..';
 
-const PORT = 8080;
+const PORT = global.config.slash_commands?.port || process.env.PORT || 8080;
 const PUBLIC_KEY =
   global.config.slash_commands?.public_key || process.env.PUBLIC_KEY!;
 
@@ -16,6 +16,12 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 app.use(json());
+
+app.use((req, _res, next) => {
+  logger.server(req.method, req.path);
+
+  next();
+});
 
 if (global.config.slash_commands?.enabled) {
   logger.log('Slash commands endpoint enabled 🗸');
