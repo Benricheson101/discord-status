@@ -6,7 +6,7 @@ export async function purgeWebhooks(
 ): Promise<{total: number; valid: number; invalid: number; deleted: number}> {
   const guilds = await GuildModel.find();
 
-  const toDelete = [];
+  const toDelete: string[] = [];
 
   const out = {
     total: guilds.length,
@@ -15,19 +15,19 @@ export async function purgeWebhooks(
     deleted: 0,
   };
 
-  for (const guild of guilds) {
-    const wh = guild.webhook.into();
+  await Promise.allSettled(
+    guilds.map(async g => {
+      const w = await g.webhook.into().get();
 
-    if (!(await wh.isValid())) {
-      out.invalid++;
+      if (!w.guild_id) {
+        out.invalid++;
+        toDelete.push(g.guild_id);
+        return;
+      }
 
-      toDelete.push(guild.guild_id);
-
-      continue;
-    }
-
-    out.valid++;
-  }
+      out.valid++;
+    })
+  );
 
   if (!dryrun) {
     const result = await GuildModel.deleteMany({guild_id: {$in: toDelete}});

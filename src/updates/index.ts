@@ -7,7 +7,7 @@ import {RichWebhookPostResult, Webhook} from '../util/Webhook';
 
 export const s = new StatuspageUpdates(
   global.config.status_page.id || process.env.STATUSPAGE_ID!,
-  5_000
+  10_000
 );
 
 s.on('incident_update', async i => {
