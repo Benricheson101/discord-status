@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import {Interaction} from './Interaction';
+import {Interaction} from 'slashy';
 import {Incident} from 'statuspage.js';
 import {capitalize} from '.';
 

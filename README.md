@@ -14,6 +14,10 @@ Wanna be pinged when there's an update? Discord Status does that too :D
   - `/config roles add role: <r-id>`
   - `/config roles remove role: <r-id>`
 
+Discord Status can also show you the current status of status page components and voice regions:
+  - `/status summary`
+  - `/status voice`
+
 ---
 
 ## Demo

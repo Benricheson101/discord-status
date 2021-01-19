@@ -386,7 +386,7 @@ async@0.9.x:
   resolved "https://registry.yarnpkg.com/async/-/async-0.9.2.tgz#aea74d5e61c1f899613bf64bda66d4c78f2fd17d"
   integrity sha1-rqdNXmHB+JlhO/ZL2mbUx48v0X0=
 
-axios@^0.21.0:
+axios@^0.21.0, axios@^0.21.1:
   version "0.21.1"
   resolved "https://registry.yarnpkg.com/axios/-/axios-0.21.1.tgz#22563481962f4d6bde9a76d516ef0e5d3c09b2b8"
   integrity sha512-dKQiRHxGD9PPRIUNIWvZhPTPpl1rf/OxTYKsqKUDjBwYylTvV7SjSHJb9ratfyzM6wCdLCOYLzs73qpg5c4iGA==
@@ -2469,6 +2469,14 @@ slash@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/slash/-/slash-3.0.0.tgz#6539be870c165adbd5240220dbe361f1bc4d4634"
   integrity sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==
+
+slashy@^1.0.7:
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/slashy/-/slashy-1.0.7.tgz#1cf28d422840193040cb5acc049a02f897fda408"
+  integrity sha512-AyHeNiTnkKWfiGQRzqQmtp4akNv42OeGeRGqqWR1UKrat1t/PDw7X14nHVxDe46ERvbccZwsndERT6uiRcPVyg==
+  dependencies:
+    axios "^0.21.1"
+    noble-ed25519 "^1.0.2"
 
 slice-ansi@^4.0.0:
   version "4.0.0"

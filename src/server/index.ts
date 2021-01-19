@@ -1,5 +1,5 @@
 import express, {json} from 'express';
-import {slashCmdAuth} from './auth';
+import {validateInteraction} from 'slashy';
 import {handleCommands} from './handleCommands';
 import {inviteUrl} from '../util';
 import {oauth2} from './oauth';
@@ -26,8 +26,7 @@ app.use((req, _res, next) => {
 if (global.config.slash_commands?.enabled) {
   logger.log('Slash commands endpoint enabled 🗸');
 
-  app.use('/cmds', slashCmdAuth({PUBLIC_KEY}));
-  app.post('/cmds', handleCommands);
+  app.post('/cmds', validateInteraction(PUBLIC_KEY), handleCommands);
 
   const inv = inviteUrl();
 

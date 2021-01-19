@@ -24,6 +24,7 @@
     "js-yaml": "^3.14.1",
     "mongoose": "5.10.18",
     "noble-ed25519": "^1.0.2",
+    "slashy": "^1.0.7",
     "statuspage.js": "^1.0.17"
   },
   "scripts": {

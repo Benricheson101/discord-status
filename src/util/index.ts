@@ -1,6 +1,6 @@
 /* eslint-disable node/no-unsupported-features/node-builtins */
 
-import {ApplicationCommand} from './Interaction';
+import {ApplicationCommand} from 'slashy';
 import {resolve} from 'path';
 import {promises} from 'fs';
 import {

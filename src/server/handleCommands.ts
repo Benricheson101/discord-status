@@ -15,10 +15,11 @@ import {
   Interaction,
   InteractionResponseFlags,
   InteractionResponseType,
-} from '../util/Interaction';
+} from 'slashy';
 import {purgeWebhooks} from '../util/purgeWebhooks';
 import {Webhook} from '../util/Webhook';
 
+// load commands once
 const commands = allCmdJson('cmds');
 
 type ExtendedHelp = Record<string, 'subscribe'>;

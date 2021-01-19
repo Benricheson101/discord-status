@@ -5,10 +5,6 @@ ignore_files=(
   "subscribe.json"
 )
 
-# MODE="GLOBAL"
-
-# [[ -z "$GUILD" ]] || MODE="GUILD"
-
 if [ -z "$GUILD" ]; then
   MODE="GLOBAL"
   endpoint="/applications/$APPLICATION_ID/commands"
