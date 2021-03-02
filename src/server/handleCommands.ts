@@ -419,7 +419,7 @@ export async function handleCommands(
           flags: InteractionResponseFlags.EPHEMERAL,
           content:
             '**Discord Status**:\n' +
-            '> **Author**: [Ben#0002](https://red-panda.red)\n' +
+            '> **Author**: [Ben!#0002](https://red-panda.red)\n' +
             '> **GitHub Repo**: <https://github.com/benricheson101/discord-status>\n' +
             `> **Webhooks**: ${guilds}`,
         },
