@@ -18,6 +18,9 @@ Discord Status can also show you the current status of status page components an
   - `/status summary`
   - `/status voice`
 
+
+**Add it to your server!** [With commands](https://discord-status.red-panda.red) | [Without commands](https://discord.com/oauth2/authorize?client_id=662416455366737949&redirect_uri=https://discord-status.red-panda.red/auth/callback&response_type=code&scope=webhook.incoming)
+
 ---
 
 ## Demo
