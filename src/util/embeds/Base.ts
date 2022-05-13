@@ -8,7 +8,7 @@ export abstract class BaseEmbed extends EmbedBuilder {
 
   author = {
     name: 'Discord Status',
-    icon_url: 'https://discord.com/assets/2c21aeda16de354ba5334551a883b481.png',
+    icon_url: 'https://discord.com/assets/f9bb9c4af2b9c32a2c5ee0014661546d.png',
     url: global.config.meta?.support_server
       ? `https://discord.gg/${global.config.meta?.support_server}`
       : '',
