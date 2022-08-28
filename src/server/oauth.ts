@@ -21,7 +21,7 @@ export async function oauth2(
     return res.redirect('/');
   }
 
-  const gid = /\d{16,18}/.exec(req.query.guild_id);
+  const gid = /\d{16,19}/.exec(req.query.guild_id);
 
   if (!gid) {
     return res.sendStatus(422);
