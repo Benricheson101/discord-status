@@ -120,7 +120,7 @@ export class Webhook {
     id: NonNullable<WebhookResponse['id']>;
     token: NonNullable<WebhookResponse['token']>;
   } | null {
-    const re = /^(?:https?:\/\/)?(?:canary.|ptb.)?discord(?:app)?.com\/api\/webhooks\/(?<id>\d{16,18})\/(?<token>[-_A-Za-z0-9.]+)(\?.*)?$/;
+    const re = /^(?:https?:\/\/)?(?:canary.|ptb.)?discord(?:app)?.com\/api\/webhooks\/(?<id>\d{16,19})\/(?<token>[-_A-Za-z0-9.]+)(\?.*)?$/;
     const groups = re.exec(hook)?.groups;
 
     if (!(groups?.token && groups?.id)) {
