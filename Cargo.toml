@@ -1,0 +1,22 @@
+[package]
+name = "discord-status"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-stream = "0.3.3"
+chrono = { version = "0.4.23", features = ["serde"] }
+dotenv = "0.15.0"
+futures = "0.3.25"
+reqwest = { version = "0.11.13", features = ["json", "serde_json"] }
+rustls = "0.20.7"
+serde = { version = "1.0.151", features = ["derive"] }
+serde_json = "1.0.91"
+sqlx = { version = "0.6.2", features = ["postgres", "runtime-tokio-rustls", "macros"] }
+tokio = { version = "1.23.0", features = ["rt-multi-thread", "macros", "time"] }
+tracing = "0.1.37"
+tracing-subscriber = "0.3.16"
+twilight-http = "0.14.0"
+twilight-model = "0.14.0"
