@@ -12,6 +12,7 @@ pub struct Incidents {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Incident {
     pub id: String,
+    pub name: String,
     pub shortlink: String,
     pub incident_updates: Vec<IncidentUpdate>,
 
@@ -39,7 +40,20 @@ pub enum IncidentStatus {
     Investigating,
     Monitoring,
     Resolved,
-    PostMortem,
+    Postmortem,
+}
+
+impl ToString for IncidentStatus {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Identified => "Identified",
+            Self::Investigating => "Investigating",
+            Self::Monitoring => "Monitoring",
+            Self::Resolved => "Resolved",
+            Self::Postmortem => "Postmortem",
+        }
+        .to_string()
+    }
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
