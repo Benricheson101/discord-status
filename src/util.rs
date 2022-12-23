@@ -29,3 +29,11 @@ pub fn get_status_emoji(status: &IncidentStatus) -> &'static str {
 pub fn get_formatted_timestamp(time: &DateTime<Utc>) -> String {
     format!("<t:{}:R>", time.timestamp())
 }
+
+pub fn truncate_with_ellipsis(s: String, len: usize) -> String {
+    if s.len() > len {
+        s[..=len - 3].to_string() + "..."
+    } else {
+        s
+    }
+}

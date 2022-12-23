@@ -10,8 +10,16 @@ use twilight_model::{
 
 use crate::{
     statuspage::{Incident, IncidentUpdate},
-    util::{get_embed_color, get_formatted_timestamp, get_status_emoji},
+    util::{
+        get_embed_color,
+        get_formatted_timestamp,
+        get_status_emoji,
+        truncate_with_ellipsis,
+    },
 };
+
+const TITLE_MAX_LEN: usize = 256;
+const FIELD_VALUE_MAX_LEN: usize = 1024;
 
 fn get_base_embed(incident: &Incident) -> Embed {
     let color = get_embed_color(&incident.status);
@@ -55,7 +63,7 @@ fn get_base_embed(incident: &Incident) -> Embed {
         video: None,
     };
 
-    if incident.name.len() > 256 {
+    if incident.name.len() > TITLE_MAX_LEN {
         embed.description = Some(format!("**{}**", incident.name.clone()));
         embed.title = Some("Discord Status Update".to_string());
     } else {
@@ -78,7 +86,7 @@ pub fn make_post_embed(incident: &Incident, update: &IncidentUpdate) -> Embed {
             update.status.to_string(),
             update_ts
         ),
-        value: update.body.clone(),
+        value: truncate_with_ellipsis(update.body.clone(), FIELD_VALUE_MAX_LEN),
         inline: false,
     };
 
@@ -101,7 +109,10 @@ pub fn make_edit_embed(incident: &Incident) -> Embed {
 
             EmbedField {
                 name: format!("{} {} ({})", emoji, upd.status.to_string(), ts),
-                value: upd.body.clone(),
+                value: truncate_with_ellipsis(
+                    upd.body.clone(),
+                    FIELD_VALUE_MAX_LEN,
+                ),
                 inline: false,
             }
         })
