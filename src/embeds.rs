@@ -67,6 +67,8 @@ fn get_base_embed(incident: &Incident) -> Embed {
 
 pub fn make_post_embed(incident: &Incident, update: &IncidentUpdate) -> Embed {
     let emoji = get_status_emoji(&update.status);
+    let color = get_embed_color(&update.status);
+    // TODO: use display_at? -- seems to be a changable timestamp on the statuspage dashboard
     let update_ts = get_formatted_timestamp(&update.created_at);
 
     let field = EmbedField {
@@ -81,6 +83,7 @@ pub fn make_post_embed(incident: &Incident, update: &IncidentUpdate) -> Embed {
     };
 
     let mut embed = get_base_embed(incident);
+    embed.color = Some(color);
     embed.fields.push(field);
 
     embed
