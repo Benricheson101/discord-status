@@ -1,4 +1,4 @@
-use sqlx::{types::time::OffsetDateTime, FromRow, PgPool};
+use sqlx::{types::time::OffsetDateTime, PgPool};
 
 pub struct Database {
     pg: PgPool,
@@ -88,7 +88,6 @@ impl Database {
         &self,
         incident_id: &String,
     ) -> sqlx::Result<Vec<SelectSubWithWehookMsgModel>> {
-        // FIXME: the second LEFT JOIN will probably join multiple columns instead of just one
         sqlx::query_as!(
             SelectSubWithWehookMsgModel,
             r#"
@@ -104,25 +103,46 @@ impl Database {
                 LEFT JOIN legacy_subscriptions AS l
                     ON s.id = l.subscription_id
                 LEFT JOIN (
-                    SELECT
-                        a.message_id,
-                        b.subscription_id
-                    FROM sent_updates AS a
-                    INNER JOIN (
-                        SELECT
-                            MAX(created_at) AS max_created_at,
-                            subscription_id,
-                            incident_id
-                        FROM sent_updates
-                        GROUP BY subscription_id, incident_id
-                    ) AS b
-                    ON a.subscription_id = b.subscription_id
-                    AND a.created_at = b.max_created_at
-                    WHERE a.incident_id = $1
+                    SELECT DISTINCT ON (incident_id, subscription_id)
+                        subscription_id,
+                        message_id
+                    FROM sent_updates
+                    WHERE kind = 'edit'
+                    AND incident_id = $1
                 ) AS u
                 ON u.subscription_id = s.id;
             "#,
             incident_id,
+        )
+        .fetch_all(&self.pg)
+        .await
+    }
+
+    pub async fn get_incident_update_modified_subscriptions(
+        &self,
+        incident_id: &String,
+        incident_update_id: &String,
+    ) -> sqlx::Result<Vec<SelectSubsForUpdateModifyModel>> {
+        sqlx::query_as!(
+            SelectSubsForUpdateModifyModel,
+            r#"
+                SELECT
+                    s.channel_id as "channel_id!",
+                    s.id as "subscription_id!",
+                    s.kind as "kind!: _",
+                    l.webhook_id as "webhook_id?",
+                    l.webhook_token as "webhook_token?",
+                    u.message_id as "message_id!"
+                FROM subscriptions AS s
+                LEFT JOIN legacy_subscriptions AS l
+                    ON s.id = l.subscription_id
+                INNER JOIN sent_updates AS u
+                    ON s.id = u.subscription_id
+                    AND u.incident_id = $1
+                    AND u.incident_update_id = $2
+            "#,
+            incident_id,
+            incident_update_id,
         )
         .fetch_all(&self.pg)
         .await
@@ -303,4 +323,14 @@ pub struct SelectSubWithWehookMsgModel {
     pub webhook_id: Option<i64>,
     pub webhook_token: Option<String>,
     pub message_id: Option<i64>,
+}
+
+#[derive(Debug)]
+pub struct SelectSubsForUpdateModifyModel {
+    pub subscription_id: i32,
+    pub channel_id: i64,
+    pub kind: SubscriptionKind,
+    pub webhook_id: Option<i64>,
+    pub webhook_token: Option<String>,
+    pub message_id: i64,
 }

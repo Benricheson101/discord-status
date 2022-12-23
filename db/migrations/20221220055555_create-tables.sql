@@ -70,8 +70,6 @@ ON sent_updates
 FOR EACH ROW
 EXECUTE PROCEDURE trigger_set_timestamp();
 
--- TODO: legacy webhook support
-
 -- migrate:down
 
 DROP TRIGGER set_timestamp ON subscriptions;

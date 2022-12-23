@@ -68,7 +68,7 @@ fn get_base_embed(incident: Incident) -> Embed {
 
 pub fn make_post_embed(incident: Incident, update: IncidentUpdate) -> Embed {
     let emoji = get_status_emoji(&update.status);
-    let update_ts = get_formatted_timestamp(&update.updated_at);
+    let update_ts = get_formatted_timestamp(&update.created_at);
 
     let field = EmbedField {
         name: format!(
@@ -95,7 +95,7 @@ pub fn make_edit_embed(incident: Incident) -> Embed {
         .rev()
         .map(|upd| {
             let emoji = get_status_emoji(&upd.status);
-            let ts = get_formatted_timestamp(&upd.updated_at);
+            let ts = get_formatted_timestamp(&upd.created_at);
 
             EmbedField {
                 name: format!("{} {} ({})", emoji, upd.status.to_string(), ts),

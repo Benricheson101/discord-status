@@ -30,6 +30,7 @@ pub struct IncidentUpdate {
     pub status: IncidentStatus,
     pub body: String,
     pub affected_components: Option<Vec<AffectedComponent>>,
+    pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
 }
 
@@ -121,107 +122,3 @@ impl StatuspageAPI {
             .await
     }
 }
-
-// #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-// #[serde(rename_all = "camelCase")]
-// pub struct StatusPageAPIIncidents {
-//     pub page: Page,
-//     pub incidents: Vec<Incident>,
-// }
-
-// #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-// #[serde(rename_all = "camelCase")]
-// pub struct Page {
-//     pub id: String,
-//     pub name: String,
-//     pub url: String,
-//     #[serde(rename = "time_zone")]
-//     pub time_zone: String,
-//     #[serde(rename = "updated_at")]
-//     pub updated_at: String,
-// }
-
-// #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-// #[serde(rename_all = "camelCase")]
-// pub struct Incident {
-//     pub id: String,
-//     pub name: String,
-//     pub status: String,
-//     #[serde(rename = "created_at")]
-//     pub created_at: String,
-//     #[serde(rename = "updated_at")]
-//     pub updated_at: String,
-//     #[serde(rename = "monitoring_at")]
-//     pub monitoring_at: Option<String>,
-//     #[serde(rename = "resolved_at")]
-//     pub resolved_at: Option<String>,
-//     pub impact: String,
-//     pub shortlink: String,
-//     #[serde(rename = "started_at")]
-//     pub started_at: String,
-//     #[serde(rename = "page_id")]
-//     pub page_id: String,
-//     #[serde(rename = "incident_updates")]
-//     pub incident_updates: Vec<IncidentUpdate>,
-//     pub components: Vec<Component>,
-// }
-
-// #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-// #[serde(rename_all = "camelCase")]
-// pub struct IncidentUpdate {
-//     pub id: String,
-//     pub status: String,
-//     pub body: String,
-//     #[serde(rename = "incident_id")]
-//     pub incident_id: String,
-//     #[serde(rename = "created_at")]
-//     pub created_at: String,
-//     #[serde(rename = "updated_at")]
-//     pub updated_at: String,
-//     #[serde(rename = "display_at")]
-//     pub display_at: String,
-//     #[serde(rename = "affected_components")]
-//     #[serde(default)]
-//     pub affected_components: Vec<AffectedComponent>,
-//     #[serde(rename = "deliver_notifications")]
-//     pub deliver_notifications: bool,
-//     #[serde(rename = "custom_tweet")]
-//     pub custom_tweet: Value,
-//     #[serde(rename = "tweet_id")]
-//     pub tweet_id: Value,
-// }
-
-// #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-// #[serde(rename_all = "camelCase")]
-// pub struct AffectedComponent {
-//     pub code: String,
-//     pub name: String,
-//     #[serde(rename = "old_status")]
-//     pub old_status: String,
-//     #[serde(rename = "new_status")]
-//     pub new_status: String,
-// }
-
-// #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-// #[serde(rename_all = "camelCase")]
-// pub struct Component {
-//     pub id: String,
-//     pub name: String,
-//     pub status: String,
-//     #[serde(rename = "created_at")]
-//     pub created_at: String,
-//     #[serde(rename = "updated_at")]
-//     pub updated_at: String,
-//     pub position: i64,
-//     pub description: Value,
-//     pub showcase: bool,
-//     #[serde(rename = "start_date")]
-//     pub start_date: String,
-//     #[serde(rename = "group_id")]
-//     pub group_id: Value,
-//     #[serde(rename = "page_id")]
-//     pub page_id: String,
-//     pub group: bool,
-//     #[serde(rename = "only_show_if_degraded")]
-//     pub only_show_if_degraded: bool,
-// }

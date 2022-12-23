@@ -6,10 +6,9 @@ pub mod util;
 use std::{
     env,
     error,
-    ops::Sub,
     pin::Pin,
     task::{Context, Poll},
-    time::{Duration, Instant, UNIX_EPOCH},
+    time::Duration,
 };
 
 use embeds::{make_edit_embed, make_post_embed};
@@ -27,13 +26,9 @@ use twilight_http::{
     Client as DiscordRestClient,
 };
 use twilight_model::{
-    channel::{
-        self,
-        message::{Embed, Message},
-    },
-    id::{marker::ChannelMarker, Id},
+    channel::message::{Embed, Message},
+    id::Id,
 };
-use util::get_formatted_timestamp;
 
 use crate::{
     db::*,
@@ -63,25 +58,6 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
     );
 
     let db = Database::new(pg_pool);
-    // db.get_subscriptions_with_webhooks().await?;
-
-    // db.get_subscriptions_with_webhooks_grouped().await?;
-
-    // let created = db
-    //     .create_subscription(CreateSubscriptionModel {
-    //         guild_id: 579466138992508928,
-    //         channel_id: 591093389366263828,
-    //         role_pings: None,
-    //         kind: None,
-    //     })
-    //     .await?;
-
-    //     println!("{:#?}", created);
-
-    //     db.delete_subscription(created.id).await?;
-
-    //     let all_subscriptions = db.get_all_subscriptions().await?;
-    //     println!("{:#?}", all_subscriptions);
 
     let statuspage_api = StatuspageAPI::new();
     let (mut su, poll) = StatuspageUpdates::new(statuspage_api);
@@ -92,10 +68,6 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
     });
 
     while let Some(updates) = su.next().await {
-        // println!("{:#?}", &updates);
-
-        // let subs = db.get_incident_created_subscriptions().await?;
-
         for update in &updates {
             match update {
                 Update::Created(i) => {
@@ -165,19 +137,18 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                     }
 
                     // TODO: do something with fails
-                    // println!("{:#?}", fail);
                 },
 
                 Update::UpdateCreated(i, u) => {
                     let subs = db
                         .get_incident_update_created_subscriptions(&i.id)
                         .await?;
-                    println!("{:#?}", &subs);
 
-                    // let futs = subs.into_iter().map(|s| {
                     // cases:
                     //   - mode:edit and Some(message_id) -> edit message
                     //   - mode:edit and None(message_id) -> send new message
+                    //   - mode:post and _ -> send update
+                    //
                     //   - mode:post and Some(message_id) -> send 1 new message
                     //   - mode:post and None(message_id) -> send all update embeds
 
@@ -242,11 +213,8 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                                 })
                                 .await;
                             },
-                            // TODO: send missed?
-                            // (SubscriptionKind::Post, None) => {},
                         }
                     }
-                    // });
 
                     // cid, kind
                     // LEFT JOIN wid, wtoken
@@ -260,7 +228,34 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                     //         - else: channel_id,webhook_id,webhook_token,kind
                 },
 
-                Update::UpdateModified(i, (u_old, u_new)) => {
+                Update::UpdateModified(i, (_u_old, u_new)) => {
+                    let subs = db
+                        .get_incident_update_modified_subscriptions(
+                            &i.id, &u_new.id,
+                        )
+                        .await?;
+
+                    println!("{:#?}", &subs);
+
+                    for sub in &subs {
+                        let embed = match sub.kind {
+                            SubscriptionKind::Post => {
+                                make_post_embed(i.clone(), u_new.clone())
+                            },
+                            SubscriptionKind::Edit => {
+                                make_edit_embed(i.clone())
+                            },
+                        };
+
+                        update_message(
+                            &discord_rest_client,
+                            sub.channel_id,
+                            sub.message_id,
+                            embed,
+                        )
+                        .await?;
+                    }
+
                     // cid, kind
                     // LEFT JOIN wid, wtoken
                     // INNER JOIN mid
@@ -271,71 +266,6 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                 },
             }
         }
-
-        // for sub in &subs {
-        //     for update in &updates {
-        //         // let (sent_msg, incident_id, update_id): (
-        //         //     Message,
-        //         //     &String,
-        //         //     Option<&String>,
-        //         // ) =
-        //         match update {
-        //             Update::Created(i) => {
-        //                 let embed = match sub.kind {
-        //                     SubscriptionKind::Post => make_post_embed(
-        //                         i.clone(),
-        //                         i.incident_updates[0].clone(),
-        //                     ),
-        //                     SubscriptionKind::Edit => {
-        //                         make_edit_embed(i.clone())
-        //                     },
-        //                 };
-
-        //                 create_message(
-        //                     &discord_rest_client,
-        //                     sub.channel_id,
-        //                     embed,
-        //                 )
-        //                 .await?;
-
-        //                 // send_update("New Incident", &discord_rest_client, &i)
-        //                 // .await;
-        //             },
-
-        //             Update::UpdateCreated(i, u) => {
-        //                 // send_update("Update Created", &discord_rest_client, &i)
-        //                 //     .await;
-        //             },
-
-        //             Update::UpdateModified(i, (u, _)) => {
-        //                 // send_update(
-        //                 //     "Update Modified",
-        //                 //     &discord_rest_client,
-        //                 //     &i,
-        //                 // )
-        //                 // .await;
-        //             },
-        //         }
-
-        //         // info!(
-        //         //     message_id = sent_msg.id.get(),
-        //         //     incident_id = incident_id,
-        //         //     incident_update_id = update_id
-        //         // );
-
-        //         // if let Some(update_id) = update_id {
-        //         //     println!("creating sent_update");
-        //         //     db.create_sent_update(CreateSentUpdateModel {
-        //         //         message_id: sent_msg.id.get() as i64,
-        //         //         incident_id: incident_id.clone(),
-        //         //         incident_update_id: update_id.clone(),
-        //         //         subscription_id: sub.subscription_id,
-        //         //         legacy_subscription_id: sub.legacy_subscription_id,
-        //         //     })
-        //         //     .await;
-        //         // }
-        //     }
-        // }
     }
 
     Ok(())
@@ -372,19 +302,9 @@ async fn update_message(
         .map_err(|e| e.into())
 }
 
+// TODO: more specific errors
 #[derive(Debug, Error)]
 pub enum DiscordStatusError {
-    // #[error("failed to send message to channel {}: {:?}", .channel_id, .source)]
-    // MessageSendError {
-    //     source: twilight_http::Error,
-    //     channel_id: u64,
-    // },
-    // #[error("failed to edit message {}:{}: {:?}", .channel_id, .message_id, .source)]
-    // MessageEditError {
-    //     source: twilight_http::Error,
-    //     channel_id: u64,
-    //     message_id: u64,
-    // },
     #[error("http request failed: {:?}", .source)]
     TwilightHTTPError {
         #[from]
@@ -396,43 +316,6 @@ pub enum DiscordStatusError {
         source: DeserializeBodyError,
     },
 }
-
-// async fn send_update(
-//     kind: &str,
-//     rest_client: &DiscordRestClient,
-//     incident: &Incident,
-// ) -> Message {
-//     // let msg = incident
-//     //     .incident_updates
-//     //     .iter()
-//     //     .rev()
-//     //     .map(|upd| {
-//     //         let ts = get_formatted_timestamp(&upd.updated_at);
-//     //         format!("{} {:?}: {}", ts, &upd.status, &upd.body)
-//     //     })
-//     //     .collect::<Vec<String>>()
-//     //     .join("\n");
-
-//     // let ts = get_formatted_timestamp(&incident.created_at);
-
-//     let edit_embed = make_edit_embed(incident.clone());
-
-//     let sent_msg = rest_client
-//         .create_message(Id::new(591093389366263828))
-//         .embeds(&[edit_embed])
-//         .unwrap()
-//         .content(kind)
-//         .unwrap()
-//         .await
-//         .unwrap()
-//         .model()
-//         .await
-//         .unwrap();
-
-//     // println!("{:#?}", &sent_msg);
-
-//     sent_msg
-// }
 
 fn cmp_incidents(
     old_incidents: &Incidents,
