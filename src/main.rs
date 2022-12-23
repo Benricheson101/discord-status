@@ -4,23 +4,12 @@ pub mod embeds;
 pub mod statuspage;
 pub mod util;
 
-use std::{
-    env,
-    error,
-    pin::Pin,
-    task::{Context, Poll},
-    time::Duration,
-};
+use std::{env, error};
 
 use embeds::{make_edit_embed, make_post_embed};
-use futures::{future::join_all, Stream, StreamExt};
+use futures::{future::join_all, StreamExt};
 use sqlx::postgres::PgPoolOptions;
-use statuspage::{Incident, IncidentUpdate};
 use thiserror::Error;
-use tokio::{
-    sync::mpsc::{self, UnboundedReceiver, UnboundedSender},
-    time,
-};
 use tracing::info;
 use twilight_http::{
     response::DeserializeBodyError,
@@ -33,7 +22,7 @@ use twilight_model::{
 
 use crate::{
     db::*,
-    statuspage::{Incidents, StatuspageAPI},
+    statuspage::{StatuspageAPI, StatuspageUpdates, Update},
 };
 
 #[tokio::main]
@@ -68,6 +57,7 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
         poll.start().await;
     });
 
+    // TODO: handle the errors in here
     while let Some(updates) = su.next().await {
         for update in &updates {
             match update {
@@ -135,14 +125,6 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                     let subs = db
                         .get_incident_update_created_subscriptions(&i.id)
                         .await?;
-
-                    // cases:
-                    //   - mode:edit and Some(message_id) -> edit message
-                    //   - mode:edit and None(message_id) -> send new message
-                    //   - mode:post and _ -> send update
-                    //
-                    //   - mode:post and Some(message_id) -> send 1 new message
-                    //   - mode:post and None(message_id) -> send all update embeds
 
                     for s in &subs {
                         match (s.kind, s.message_id) {
@@ -284,131 +266,4 @@ pub enum DiscordStatusError {
         #[from]
         source: DeserializeBodyError,
     },
-}
-
-fn cmp_incidents(
-    old_incidents: &Incidents,
-    new_incidents: &Incidents,
-) -> Vec<Update> {
-    let mut updated_incidents = vec![];
-
-    for incident in &new_incidents.incidents {
-        match old_incidents.incidents.iter().find(|i| i.id == incident.id) {
-            Some(i) => {
-                if i.status == incident.status
-                    && i.updated_at == incident.updated_at
-                    && i.incident_updates.len()
-                        == incident.incident_updates.len()
-                {
-                    continue;
-                }
-
-                for update in &incident.incident_updates {
-                    match i.incident_updates.iter().find(|u| u.id == update.id)
-                    {
-                        Some(u) => {
-                            if update.status != u.status
-                                || update.body != u.body
-                                || update.updated_at != u.updated_at
-                            {
-                                info!(
-                                    incident_id = &incident.id,
-                                    update_id = &update.id,
-                                    "An incident was modified",
-                                );
-                                updated_incidents.push(Update::UpdateModified(
-                                    incident.clone(),
-                                    (u.clone(), update.clone()),
-                                ));
-                            }
-                        },
-
-                        None => {
-                            info!(
-                                incident_id = &incident.id,
-                                update_id = &update.id,
-                                "New incident update found",
-                            );
-
-                            updated_incidents.push(Update::UpdateCreated(
-                                incident.clone(),
-                                update.clone(),
-                            ));
-                        },
-                    }
-                }
-            },
-
-            None => {
-                info!(id = &incident.id, "New incident found",);
-                updated_incidents.push(Update::Created(incident.clone()));
-            },
-        }
-    }
-
-    updated_incidents
-}
-
-struct StatuspageUpdates {
-    rx: UnboundedReceiver<Vec<Update>>,
-}
-
-impl StatuspageUpdates {
-    pub fn new(statuspage_api: StatuspageAPI) -> (Self, StatuspageUpdatesPoll) {
-        let (tx, rx) = mpsc::unbounded_channel();
-
-        (Self { rx }, StatuspageUpdatesPoll { tx, statuspage_api })
-    }
-}
-
-pub struct StatuspageUpdatesPoll {
-    tx: UnboundedSender<Vec<Update>>,
-    statuspage_api: StatuspageAPI,
-}
-
-impl StatuspageUpdatesPoll {
-    pub fn new(
-        tx: UnboundedSender<Vec<Update>>,
-        statuspage_api: StatuspageAPI,
-    ) -> Self {
-        Self { tx, statuspage_api }
-    }
-
-    pub async fn start(&self) {
-        let mut prev = self.statuspage_api.get_all_incidents().await.unwrap();
-
-        let mut interval = time::interval(Duration::from_secs(5));
-
-        // TODO: why does this sometimes get into a weird state where it loops infinitely?
-        loop {
-            interval.tick().await;
-            let curr = self.statuspage_api.get_all_incidents().await.unwrap();
-            let changes = cmp_incidents(&prev, &curr);
-
-            if !changes.is_empty() {
-                self.tx.send(changes).ok();
-            }
-
-            prev = curr;
-        }
-    }
-}
-
-impl Stream for StatuspageUpdates {
-    type Item = Vec<Update>;
-
-    fn poll_next(
-        mut self: Pin<&mut Self>,
-        cx: &mut Context<'_>,
-    ) -> Poll<Option<Self::Item>> {
-        self.rx.poll_recv(cx)
-    }
-}
-
-#[derive(Debug)]
-pub enum Update {
-    Created(Incident),
-    // Deleted(String), // TODO: do i have a way to find this?
-    UpdateCreated(Incident, IncidentUpdate),
-    UpdateModified(Incident, (IncidentUpdate, IncidentUpdate)),
 }

@@ -1,8 +1,186 @@
-use std::env;
+use std::{
+    env,
+    pin::Pin,
+    task::{Context, Poll},
+    time::Duration,
+};
 
 use chrono::{DateTime, Utc};
+use futures::Stream;
 use reqwest::Client as ReqwestClient;
 use serde::{Deserialize, Serialize};
+use tokio::{
+    sync::mpsc::{self, UnboundedReceiver, UnboundedSender},
+    time,
+};
+use tracing::info;
+#[derive(Clone)]
+pub struct StatuspageAPI {
+    reqwest_client: ReqwestClient,
+    statuspage_api_url: String,
+}
+
+impl StatuspageAPI {
+    pub fn new() -> Self {
+        let reqwest_client = ReqwestClient::new();
+
+        Self {
+            reqwest_client,
+            statuspage_api_url: env::var("STATUSPAGE_API_URL")
+                .expect("Missing `STATUSPAGE_API_URL` in env"),
+        }
+    }
+
+    pub async fn get_all_incidents(&self) -> reqwest::Result<Incidents> {
+        let url = format!("{}/incidents.json", self.statuspage_api_url);
+
+        self.reqwest_client
+            .get(url)
+            .send()
+            .await?
+            .json::<Incidents>()
+            .await
+    }
+}
+
+impl Default for StatuspageAPI {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+pub struct StatuspageUpdates {
+    rx: UnboundedReceiver<Vec<Update>>,
+}
+
+impl StatuspageUpdates {
+    pub fn new(statuspage_api: StatuspageAPI) -> (Self, StatuspageUpdatesPoll) {
+        let (tx, rx) = mpsc::unbounded_channel();
+
+        (Self { rx }, StatuspageUpdatesPoll { tx, statuspage_api })
+    }
+}
+
+pub struct StatuspageUpdatesPoll {
+    tx: UnboundedSender<Vec<Update>>,
+    statuspage_api: StatuspageAPI,
+}
+
+impl StatuspageUpdatesPoll {
+    pub fn new(
+        tx: UnboundedSender<Vec<Update>>,
+        statuspage_api: StatuspageAPI,
+    ) -> Self {
+        Self { tx, statuspage_api }
+    }
+
+    pub async fn start(&self) {
+        let mut prev = self.statuspage_api.get_all_incidents().await.unwrap();
+
+        let mut interval = time::interval(Duration::from_secs(5));
+
+        // TODO: why does this sometimes get into a weird state where it loops infinitely?
+        loop {
+            interval.tick().await;
+            let curr = self.statuspage_api.get_all_incidents().await.unwrap();
+            let changes = self.cmp_incidents(&prev, &curr);
+
+            if !changes.is_empty() {
+                self.tx.send(changes).ok();
+            }
+
+            prev = curr;
+        }
+    }
+
+    fn cmp_incidents(
+        &self,
+        old_incidents: &Incidents,
+        new_incidents: &Incidents,
+    ) -> Vec<Update> {
+        let mut updated_incidents = vec![];
+
+        for incident in &new_incidents.incidents {
+            match old_incidents.incidents.iter().find(|i| i.id == incident.id) {
+                Some(i) => {
+                    if i.status == incident.status
+                        && i.updated_at == incident.updated_at
+                        && i.incident_updates.len()
+                            == incident.incident_updates.len()
+                    {
+                        continue;
+                    }
+
+                    for update in &incident.incident_updates {
+                        match i
+                            .incident_updates
+                            .iter()
+                            .find(|u| u.id == update.id)
+                        {
+                            Some(u) => {
+                                if update.status != u.status
+                                    || update.body != u.body
+                                    || update.updated_at != u.updated_at
+                                {
+                                    info!(
+                                        incident_id = &incident.id,
+                                        update_id = &update.id,
+                                        "An incident was modified",
+                                    );
+                                    updated_incidents.push(
+                                        Update::UpdateModified(
+                                            incident.clone(),
+                                            (u.clone(), update.clone()),
+                                        ),
+                                    );
+                                }
+                            },
+
+                            None => {
+                                info!(
+                                    incident_id = &incident.id,
+                                    update_id = &update.id,
+                                    "New incident update found",
+                                );
+
+                                updated_incidents.push(Update::UpdateCreated(
+                                    incident.clone(),
+                                    update.clone(),
+                                ));
+                            },
+                        }
+                    }
+                },
+
+                None => {
+                    info!(id = &incident.id, "New incident found",);
+                    updated_incidents.push(Update::Created(incident.clone()));
+                },
+            }
+        }
+
+        updated_incidents
+    }
+}
+
+impl Stream for StatuspageUpdates {
+    type Item = Vec<Update>;
+
+    fn poll_next(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> Poll<Option<Self::Item>> {
+        self.rx.poll_recv(cx)
+    }
+}
+
+#[derive(Debug)]
+pub enum Update {
+    Created(Incident),
+    // Deleted(String), // TODO: do i have a way to find this?
+    UpdateCreated(Incident, IncidentUpdate),
+    UpdateModified(Incident, (IncidentUpdate, IncidentUpdate)),
+}
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Incidents {
@@ -91,39 +269,4 @@ pub struct Component {
 
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
-}
-
-#[derive(Clone)]
-pub struct StatuspageAPI {
-    reqwest_client: ReqwestClient,
-    statuspage_api_url: String,
-}
-
-impl StatuspageAPI {
-    pub fn new() -> Self {
-        let reqwest_client = ReqwestClient::new();
-
-        Self {
-            reqwest_client,
-            statuspage_api_url: env::var("STATUSPAGE_API_URL")
-                .expect("Missing `STATUSPAGE_API_URL` in env"),
-        }
-    }
-
-    pub async fn get_all_incidents(&self) -> reqwest::Result<Incidents> {
-        let url = format!("{}/incidents.json", self.statuspage_api_url);
-
-        self.reqwest_client
-            .get(url)
-            .send()
-            .await?
-            .json::<Incidents>()
-            .await
-    }
-}
-
-impl Default for StatuspageAPI {
-    fn default() -> Self {
-        Self::new()
-    }
 }
