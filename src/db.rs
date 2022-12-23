@@ -12,9 +12,9 @@ impl Database {
     pub async fn get_guild_subscriptions(
         &self,
         guild_id: i64,
-    ) -> sqlx::Result<SubscriptionModel> {
+    ) -> sqlx::Result<Subscription> {
         sqlx::query_as!(
-            SubscriptionModel,
+            Subscription,
             r#"
                 SELECT
                     id,
@@ -35,9 +35,9 @@ impl Database {
 
     pub async fn get_all_subscriptions(
         &self,
-    ) -> sqlx::Result<Vec<SubscriptionModel>> {
+    ) -> sqlx::Result<Vec<Subscription>> {
         sqlx::query_as!(
-            SubscriptionModel,
+            Subscription,
             r#"
                 SELECT
                     id,
@@ -55,9 +55,9 @@ impl Database {
 
     pub async fn get_incident_created_subscriptions(
         &self,
-    ) -> sqlx::Result<Vec<SelectSubscriptionWithWebhookModel>> {
+    ) -> sqlx::Result<Vec<SelectSubsForIncidentCreated>> {
         sqlx::query_as!(
-            SelectSubscriptionWithWebhookModel,
+            SelectSubsForIncidentCreated,
             r#"
                 SELECT
                     subscriptions.id AS "subscription_id!",
@@ -78,9 +78,9 @@ impl Database {
     pub async fn get_incident_update_created_subscriptions(
         &self,
         incident_id: &String,
-    ) -> sqlx::Result<Vec<SelectSubWithWehookMsgModel>> {
+    ) -> sqlx::Result<Vec<SelectSubForUpdateCreated>> {
         sqlx::query_as!(
-            SelectSubWithWehookMsgModel,
+            SelectSubForUpdateCreated,
             r#"
                 SELECT
                     s.channel_id as "channel_id!",
@@ -113,9 +113,9 @@ impl Database {
         &self,
         incident_id: &String,
         incident_update_id: &String,
-    ) -> sqlx::Result<Vec<SelectSubsForUpdateModifyModel>> {
+    ) -> sqlx::Result<Vec<SelectSubsForUpdateModified>> {
         sqlx::query_as!(
-            SelectSubsForUpdateModifyModel,
+            SelectSubsForUpdateModified,
             r#"
                 SELECT
                     s.channel_id as "channel_id!",
@@ -139,8 +139,11 @@ impl Database {
         .await
     }
 
-    pub async fn create_sent_update(&self, data: CreateSentUpdate<'_>) {
-        let created = sqlx::query!(
+    pub async fn create_sent_update(
+        &self,
+        data: CreateSentUpdate<'_>,
+    ) -> sqlx::Result<()> {
+        sqlx::query!(
             r#"
                 INSERT INTO sent_updates (
                     message_id,
@@ -160,47 +163,17 @@ impl Database {
             data.legacy_subscription_id,
         )
         .execute(&self.pg)
-        .await
-        .unwrap();
-
-        println!("{:#?}", created);
-    }
-
-    pub async fn get_edit_subscriptions(
-        &self,
-        incident_id: &String,
-        incident_update_id: &String,
-    ) -> sqlx::Result<()> {
-        let res = sqlx::query!(
-            r#"
-                SELECT subscriptions.id, sent_updates.message_id, sent_updates.incident_id
-                FROM subscriptions
-                INNER JOIN sent_updates
-                ON subscriptions.id = sent_updates.subscription_id
-                LEFT JOIN legacy_subscriptions
-                ON subscriptions.id = legacy_subscriptions.subscription_id
-                WHERE
-                    subscriptions.kind = 'edit'::subscription_kind
-                    AND sent_updates.incident_id = $1
-                    AND sent_updates.incident_update_id = $2
-            "#,
-            incident_id,
-            incident_update_id
-        )
-        .fetch_all(&self.pg)
         .await?;
-
-        println!("{:#?}", res);
 
         Ok(())
     }
 
     pub async fn create_subscription(
         &self,
-        subscription: CreateSubscriptionModel,
-    ) -> sqlx::Result<SubscriptionModel> {
+        subscription: CreateSubscription,
+    ) -> sqlx::Result<Subscription> {
         sqlx::query_as!(
-            SubscriptionModel,
+            Subscription,
             r#"
                 INSERT INTO subscriptions (guild_id, channel_id, kind)
                 VALUES ($1, $2, $3)
@@ -244,7 +217,7 @@ impl Default for SubscriptionKind {
 }
 
 #[derive(Debug)]
-pub struct SubscriptionModel {
+pub struct Subscription {
     pub id: i32,
 
     pub guild_id: i64,
@@ -258,7 +231,7 @@ pub struct SubscriptionModel {
 }
 
 #[derive(Debug)]
-pub struct CreateSubscriptionModel {
+pub struct CreateSubscription {
     pub guild_id: i64,
     pub channel_id: i64,
 
@@ -267,7 +240,7 @@ pub struct CreateSubscriptionModel {
 }
 
 #[derive(Debug)]
-pub struct LegacySubscriptionModel {
+pub struct LegacySubscription {
     pub id: i32,
     pub webhook_id: i64,
     pub webhook_token: String,
@@ -275,7 +248,7 @@ pub struct LegacySubscriptionModel {
 }
 
 #[derive(Debug)]
-pub struct SentUpdateModel {
+pub struct SentUpdate {
     pub id: i32,
     pub message_id: i64,
     pub kind: SubscriptionKind,
@@ -296,7 +269,7 @@ pub struct CreateSentUpdate<'a> {
 }
 
 #[derive(Debug)]
-pub struct SelectSubscriptionWithWebhookModel {
+pub struct SelectSubsForIncidentCreated {
     pub subscription_id: i32,
     pub kind: SubscriptionKind,
     pub legacy_subscription_id: Option<i32>,
@@ -306,7 +279,7 @@ pub struct SelectSubscriptionWithWebhookModel {
 }
 
 #[derive(Debug)]
-pub struct SelectSubWithWehookMsgModel {
+pub struct SelectSubForUpdateCreated {
     pub channel_id: i64,
     pub subscription_id: i32,
     pub kind: SubscriptionKind,
@@ -317,7 +290,7 @@ pub struct SelectSubWithWehookMsgModel {
 }
 
 #[derive(Debug)]
-pub struct SelectSubsForUpdateModifyModel {
+pub struct SelectSubsForUpdateModified {
     pub subscription_id: i32,
     pub channel_id: i64,
     pub kind: SubscriptionKind,

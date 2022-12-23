@@ -81,8 +81,6 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                             SubscriptionKind::Edit => make_edit_embed(i),
                         };
 
-                        println!("trying to send message to {}", &s.channel_id);
-
                         async {
                             (
                                 create_message(
@@ -106,10 +104,11 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                         .into_iter()
                         .map(|s| (s.0.unwrap(), s.1))
                         .collect();
-                    let fail: Vec<_> = fail
-                        .into_iter()
-                        .map(|f| (f.0.unwrap_err(), f.1))
-                        .collect();
+                    // TODO: do something with fails
+                    // let fail: Vec<_> = fail
+                    //     .into_iter()
+                    //     .map(|f| (f.0.unwrap_err(), f.1))
+                    //     .collect();
 
                     info!(
                         success = success.len(),
@@ -117,8 +116,6 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                         total = total,
                         "Sent incident created messages",
                     );
-
-                    println!("{:#?}", fail);
 
                     for s in &success {
                         db.create_sent_update(CreateSentUpdate {
@@ -129,10 +126,9 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                             subscription_id: s.1.subscription_id,
                             legacy_subscription_id: s.1.legacy_subscription_id,
                         })
-                        .await;
+                        .await
+                        .ok();
                     }
-
-                    // TODO: do something with fails
                 },
 
                 Update::UpdateCreated(i, u) => {
@@ -168,7 +164,8 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                                     legacy_subscription_id: s
                                         .legacy_subscription_id,
                                 })
-                                .await;
+                                .await
+                                .ok();
                             },
                             (SubscriptionKind::Edit, None) => {
                                 let embed = make_edit_embed(i);
@@ -187,7 +184,8 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                                     legacy_subscription_id: s
                                         .legacy_subscription_id,
                                 })
-                                .await;
+                                .await
+                                .ok();
                             },
                             (SubscriptionKind::Post, _) => {
                                 let embed = make_post_embed(i, u);
@@ -206,21 +204,11 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                                     legacy_subscription_id: s
                                         .legacy_subscription_id,
                                 })
-                                .await;
+                                .await
+                                .ok();
                             },
                         }
                     }
-
-                    // cid, kind
-                    // LEFT JOIN wid, wtoken
-                    // LEFT JOIN mid
-
-                    // queries:
-                    //     - if post: channel_id,webhook_id,webhook_token,kind
-                    //     - if edit:
-                    //         - if previously sent message:
-                    //           channel_id,message_id,webhook_id,webhook_token,kind
-                    //         - else: channel_id,webhook_id,webhook_token,kind
                 },
 
                 Update::UpdateModified(i, (_u_old, u_new)) => {
@@ -229,8 +217,6 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                             &i.id, &u_new.id,
                         )
                         .await?;
-
-                    println!("{:#?}", &subs);
 
                     for sub in &subs {
                         let embed = match sub.kind {
@@ -246,14 +232,6 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                         )
                         .await?;
                     }
-
-                    // cid, kind
-                    // LEFT JOIN wid, wtoken
-                    // INNER JOIN mid
-
-                    // queries:
-                    //     - if sub AND message already posted:
-                    //       channel_id,message_id,webhook_id,webhook_token,kind
                 },
             }
         }
@@ -314,8 +292,6 @@ fn cmp_incidents(
 ) -> Vec<Update> {
     let mut updated_incidents = vec![];
 
-    // TODO: deleted incidents?
-
     for incident in &new_incidents.incidents {
         match old_incidents.incidents.iter().find(|i| i.id == incident.id) {
             Some(i) => {
@@ -334,7 +310,6 @@ fn cmp_incidents(
                             if update.status != u.status
                                 || update.body != u.body
                                 || update.updated_at != u.updated_at
-                            // TODO: affected_components?
                             {
                                 info!(
                                     incident_id = &incident.id,
@@ -345,7 +320,6 @@ fn cmp_incidents(
                                     incident.clone(),
                                     (u.clone(), update.clone()),
                                 ));
-                                // continue 'incidents;
                             }
                         },
 
@@ -360,16 +334,12 @@ fn cmp_incidents(
                                 incident.clone(),
                                 update.clone(),
                             ));
-                            // continue 'incidents;
                         },
                     }
                 }
             },
 
             None => {
-                let j = vec![new_incidents, old_incidents];
-                let j = serde_json::to_string(&j).unwrap();
-                println!("{}", j);
                 info!(id = &incident.id, "New incident found",);
                 updated_incidents.push(Update::Created(incident.clone()));
             },
@@ -414,8 +384,6 @@ impl StatuspageUpdatesPoll {
             interval.tick().await;
             let curr = self.statuspage_api.get_all_incidents().await.unwrap();
             let changes = cmp_incidents(&prev, &curr);
-
-            println!("{:#?}", changes);
 
             if !changes.is_empty() {
                 self.tx.send(changes).ok();
