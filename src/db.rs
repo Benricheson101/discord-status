@@ -1,5 +1,7 @@
 use sqlx::{types::time::OffsetDateTime, PgPool};
 
+use crate::error::Result;
+
 pub struct Database {
     pg: PgPool,
 }
@@ -12,7 +14,7 @@ impl Database {
     pub async fn get_guild_subscriptions(
         &self,
         guild_id: i64,
-    ) -> sqlx::Result<Subscription> {
+    ) -> Result<Subscription> {
         sqlx::query_as!(
             Subscription,
             r#"
@@ -31,11 +33,10 @@ impl Database {
         )
         .fetch_one(&self.pg)
         .await
+        .map_err(|e| e.into())
     }
 
-    pub async fn get_all_subscriptions(
-        &self,
-    ) -> sqlx::Result<Vec<Subscription>> {
+    pub async fn get_all_subscriptions(&self) -> Result<Vec<Subscription>> {
         sqlx::query_as!(
             Subscription,
             r#"
@@ -51,11 +52,12 @@ impl Database {
         )
         .fetch_all(&self.pg)
         .await
+        .map_err(|e| e.into())
     }
 
     pub async fn get_incident_created_subscriptions(
         &self,
-    ) -> sqlx::Result<Vec<SelectSubsForIncidentCreated>> {
+    ) -> Result<Vec<SelectSubsForIncidentCreated>> {
         sqlx::query_as!(
             SelectSubsForIncidentCreated,
             r#"
@@ -73,12 +75,13 @@ impl Database {
         )
         .fetch_all(&self.pg)
         .await
+        .map_err(|e| e.into())
     }
 
     pub async fn get_incident_update_created_subscriptions(
         &self,
         incident_id: &String,
-    ) -> sqlx::Result<Vec<SelectSubForUpdateCreated>> {
+    ) -> Result<Vec<SelectSubForUpdateCreated>> {
         sqlx::query_as!(
             SelectSubForUpdateCreated,
             r#"
@@ -107,13 +110,14 @@ impl Database {
         )
         .fetch_all(&self.pg)
         .await
+        .map_err(|e| e.into())
     }
 
     pub async fn get_incident_update_modified_subscriptions(
         &self,
         incident_id: &String,
         incident_update_id: &String,
-    ) -> sqlx::Result<Vec<SelectSubsForUpdateModified>> {
+    ) -> Result<Vec<SelectSubsForUpdateModified>> {
         sqlx::query_as!(
             SelectSubsForUpdateModified,
             r#"
@@ -137,12 +141,13 @@ impl Database {
         )
         .fetch_all(&self.pg)
         .await
+        .map_err(|e| e.into())
     }
 
     pub async fn create_sent_update(
         &self,
         data: CreateSentUpdate<'_>,
-    ) -> sqlx::Result<()> {
+    ) -> Result<()> {
         sqlx::query!(
             r#"
                 INSERT INTO sent_updates (
@@ -171,7 +176,7 @@ impl Database {
     pub async fn create_subscription(
         &self,
         subscription: CreateSubscription,
-    ) -> sqlx::Result<Subscription> {
+    ) -> Result<Subscription> {
         sqlx::query_as!(
             Subscription,
             r#"
@@ -192,9 +197,10 @@ impl Database {
         )
         .fetch_one(&self.pg)
         .await
+        .map_err(|e| e.into())
     }
 
-    pub async fn delete_subscription(&self, id: i32) -> sqlx::Result<()> {
+    pub async fn delete_subscription(&self, id: i32) -> Result<()> {
         sqlx::query!("DELETE FROM subscriptions WHERE id = $1", id)
             .execute(&self.pg)
             .await?;

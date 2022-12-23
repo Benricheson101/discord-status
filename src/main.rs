@@ -1,20 +1,17 @@
 pub mod constants;
 pub mod db;
 pub mod embeds;
+pub mod error;
 pub mod statuspage;
 pub mod util;
 
-use std::{env, error};
+use std::env;
 
 use embeds::{make_edit_embed, make_post_embed};
 use futures::{future::join_all, StreamExt};
 use sqlx::postgres::PgPoolOptions;
-use thiserror::Error;
 use tracing::info;
-use twilight_http::{
-    response::DeserializeBodyError,
-    Client as DiscordRestClient,
-};
+use twilight_http::Client as DiscordRestClient;
 use twilight_model::{
     channel::message::{Embed, Message},
     id::Id,
@@ -22,11 +19,12 @@ use twilight_model::{
 
 use crate::{
     db::*,
+    error::ApplicationError,
     statuspage::{StatuspageAPI, StatuspageUpdates, Update},
 };
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn error::Error>> {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt::init();
     dotenv::dotenv().ok();
 
@@ -226,12 +224,16 @@ async fn create_message(
     rest_client: &DiscordRestClient,
     channel_id: i64,
     embed: Embed,
-) -> Result<Message, DiscordStatusError> {
+) -> Result<Message, ApplicationError> {
     rest_client
         .create_message(Id::new(channel_id as u64))
         .embeds(&[embed])
         .unwrap()
-        .await?
+        .await
+        .map_err(|e| ApplicationError::MessageSendError {
+            channel_id: channel_id as u64,
+            error: e,
+        })?
         .model()
         .await
         .map_err(|e| e.into())
@@ -242,28 +244,18 @@ async fn update_message(
     channel_id: i64,
     message_id: i64,
     embed: Embed,
-) -> Result<Message, DiscordStatusError> {
+) -> Result<Message, ApplicationError> {
     rest_client
         .update_message(Id::new(channel_id as u64), Id::new(message_id as u64))
         .embeds(Some(&[embed]))
         .unwrap()
-        .await?
+        .await
+        .map_err(|e| ApplicationError::MessageEditError {
+            channel_id: channel_id as u64,
+            message_id: message_id as u64,
+            error: e,
+        })?
         .model()
         .await
         .map_err(|e| e.into())
-}
-
-// TODO: more specific errors
-#[derive(Debug, Error)]
-pub enum DiscordStatusError {
-    #[error("http request failed: {:?}", .source)]
-    TwilightHTTPError {
-        #[from]
-        source: twilight_http::Error,
-    },
-    #[error("failed to deserialize response body")]
-    DeserializeBodyError {
-        #[from]
-        source: DeserializeBodyError,
-    },
 }
