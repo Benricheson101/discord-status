@@ -1,3 +1,4 @@
+pub mod constants;
 pub mod db;
 pub mod embeds;
 pub mod statuspage;
@@ -74,13 +75,10 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                     let subs = db.get_incident_created_subscriptions().await?;
                     let futs = subs.into_iter().map(|s| {
                         let embed = match s.kind {
-                            SubscriptionKind::Post => make_post_embed(
-                                i.clone(),
-                                i.incident_updates[0].clone(),
-                            ),
-                            SubscriptionKind::Edit => {
-                                make_edit_embed(i.clone())
+                            SubscriptionKind::Post => {
+                                make_post_embed(i, &i.incident_updates[0])
                             },
+                            SubscriptionKind::Edit => make_edit_embed(i),
                         };
 
                         println!("trying to send message to {}", &s.channel_id);
@@ -155,7 +153,7 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                     for s in &subs {
                         match (s.kind, s.message_id) {
                             (SubscriptionKind::Edit, Some(msg_id)) => {
-                                let embed = make_edit_embed(i.clone());
+                                let embed = make_edit_embed(i);
                                 let msg = update_message(
                                     &discord_rest_client,
                                     s.channel_id,
@@ -175,7 +173,7 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                                 .await;
                             },
                             (SubscriptionKind::Edit, None) => {
-                                let embed = make_edit_embed(i.clone());
+                                let embed = make_edit_embed(i);
                                 let msg = create_message(
                                     &discord_rest_client,
                                     s.channel_id,
@@ -194,8 +192,7 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                                 .await;
                             },
                             (SubscriptionKind::Post, _) => {
-                                let embed =
-                                    make_post_embed(i.clone(), u.clone());
+                                let embed = make_post_embed(i, u);
                                 let msg = create_message(
                                     &discord_rest_client,
                                     s.channel_id,
@@ -239,12 +236,8 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
 
                     for sub in &subs {
                         let embed = match sub.kind {
-                            SubscriptionKind::Post => {
-                                make_post_embed(i.clone(), u_new.clone())
-                            },
-                            SubscriptionKind::Edit => {
-                                make_edit_embed(i.clone())
-                            },
+                            SubscriptionKind::Post => make_post_embed(i, u_new),
+                            SubscriptionKind::Edit => make_edit_embed(i),
                         };
 
                         update_message(

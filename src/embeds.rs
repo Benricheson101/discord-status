@@ -13,8 +13,7 @@ use crate::{
     util::{get_embed_color, get_formatted_timestamp, get_status_emoji},
 };
 
-// TODO: can this be made to not move?
-fn get_base_embed(incident: Incident) -> Embed {
+fn get_base_embed(incident: &Incident) -> Embed {
     let color = get_embed_color(&incident.status);
 
     let author = EmbedAuthor {
@@ -25,7 +24,7 @@ fn get_base_embed(incident: Incident) -> Embed {
         ),
         url: Some(
             env::var("SUPPORT_SERVER")
-                .unwrap_or("https://discordstatus.com".to_string()),
+                .unwrap_or_else(|_| "https://discordstatus.com".to_string()),
         ),
         proxy_icon_url: None,
     };
@@ -45,7 +44,7 @@ fn get_base_embed(incident: Incident) -> Embed {
         footer: Some(footer),
         kind: "rich".to_string(),
         timestamp: Some(embed_ts),
-        url: Some(incident.shortlink),
+        url: Some(incident.shortlink.clone()),
 
         description: None,
         fields: Vec::new(),
@@ -66,7 +65,7 @@ fn get_base_embed(incident: Incident) -> Embed {
     embed
 }
 
-pub fn make_post_embed(incident: Incident, update: IncidentUpdate) -> Embed {
+pub fn make_post_embed(incident: &Incident, update: &IncidentUpdate) -> Embed {
     let emoji = get_status_emoji(&update.status);
     let update_ts = get_formatted_timestamp(&update.created_at);
 
@@ -77,7 +76,7 @@ pub fn make_post_embed(incident: Incident, update: IncidentUpdate) -> Embed {
             update.status.to_string(),
             update_ts
         ),
-        value: update.body,
+        value: update.body.clone(),
         inline: false,
     };
 
@@ -87,7 +86,7 @@ pub fn make_post_embed(incident: Incident, update: IncidentUpdate) -> Embed {
     embed
 }
 
-pub fn make_edit_embed(incident: Incident) -> Embed {
+pub fn make_edit_embed(incident: &Incident) -> Embed {
     let fields = incident
         .incident_updates
         .iter()

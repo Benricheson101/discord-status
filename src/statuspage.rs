@@ -122,3 +122,9 @@ impl StatuspageAPI {
             .await
     }
 }
+
+impl Default for StatuspageAPI {
+    fn default() -> Self {
+        Self::new()
+    }
+}
