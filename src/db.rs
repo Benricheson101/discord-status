@@ -139,7 +139,7 @@ impl Database {
         .await
     }
 
-    pub async fn create_sent_update(&self, data: CreateSentUpdateModel) {
+    pub async fn create_sent_update(&self, data: CreateSentUpdate<'_>) {
         let created = sqlx::query!(
             r#"
                 INSERT INTO sent_updates (
@@ -286,11 +286,11 @@ pub struct SentUpdateModel {
 }
 
 #[derive(Debug)]
-pub struct CreateSentUpdateModel {
+pub struct CreateSentUpdate<'a> {
     pub message_id: i64,
     pub kind: SubscriptionKind,
-    pub incident_id: String,
-    pub incident_update_id: String,
+    pub incident_id: &'a String,
+    pub incident_update_id: &'a String,
     pub subscription_id: i32,
     pub legacy_subscription_id: Option<i32>,
 }

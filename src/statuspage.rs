@@ -111,8 +111,7 @@ impl StatuspageAPI {
     }
 
     pub async fn get_all_incidents(&self) -> reqwest::Result<Incidents> {
-        // TODO: can i do this without the clone?
-        let url = self.statuspage_api_url.clone() + "/incidents.json";
+        let url = format!("{}/incidents.json", self.statuspage_api_url);
 
         self.reqwest_client
             .get(url)

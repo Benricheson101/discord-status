@@ -121,11 +121,9 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                     println!("{:#?}", fail);
 
                     for s in &success {
-                        db.create_sent_update(CreateSentUpdateModel {
-                            incident_id: i.id.clone(),
-                            incident_update_id: i.incident_updates[0]
-                                .id
-                                .clone(),
+                        db.create_sent_update(CreateSentUpdate {
+                            incident_id: &i.id,
+                            incident_update_id: &i.incident_updates[0].id,
                             kind: s.1.kind,
                             message_id: s.0.id.get() as i64,
                             subscription_id: s.1.subscription_id,
@@ -161,11 +159,11 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                                     embed,
                                 )
                                 .await?;
-                                db.create_sent_update(CreateSentUpdateModel {
+                                db.create_sent_update(CreateSentUpdate {
                                     message_id: msg.id.get() as i64,
                                     kind: s.kind,
-                                    incident_id: i.id.clone(),
-                                    incident_update_id: u.id.clone(),
+                                    incident_id: &i.id,
+                                    incident_update_id: &u.id,
                                     subscription_id: s.subscription_id,
                                     legacy_subscription_id: s
                                         .legacy_subscription_id,
@@ -180,11 +178,11 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                                     embed,
                                 )
                                 .await?;
-                                db.create_sent_update(CreateSentUpdateModel {
+                                db.create_sent_update(CreateSentUpdate {
                                     message_id: msg.id.get() as i64,
                                     kind: s.kind,
-                                    incident_id: i.id.clone(),
-                                    incident_update_id: u.id.clone(),
+                                    incident_id: &i.id,
+                                    incident_update_id: &u.id,
                                     subscription_id: s.subscription_id,
                                     legacy_subscription_id: s
                                         .legacy_subscription_id,
@@ -199,11 +197,11 @@ async fn main() -> Result<(), Box<dyn error::Error>> {
                                     embed,
                                 )
                                 .await?;
-                                db.create_sent_update(CreateSentUpdateModel {
+                                db.create_sent_update(CreateSentUpdate {
                                     message_id: msg.id.get() as i64,
                                     kind: s.kind,
-                                    incident_id: i.id.clone(),
-                                    incident_update_id: u.id.clone(),
+                                    incident_id: &i.id,
+                                    incident_update_id: &u.id,
                                     subscription_id: s.subscription_id,
                                     legacy_subscription_id: s
                                         .legacy_subscription_id,
@@ -439,7 +437,7 @@ impl Stream for StatuspageUpdates {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum Update {
     Created(Incident),
     // Deleted(String), // TODO: do i have a way to find this?
