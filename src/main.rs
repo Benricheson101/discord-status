@@ -64,7 +64,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         db.get_incident_created_subscriptions(&i.id).await?;
 
                     if subs.is_empty() {
-                        warn!("Found new incident but no subscriptions to send it to");
+                        warn!("Found new incident but no subscriptions left to send it to");
                         continue;
                     }
 
@@ -127,7 +127,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .await?;
 
                     if subs.is_empty() {
-                        warn!("Found new incident update but no subscriptions to send it to");
+                        warn!("Found new incident update but no subscriptions left to send it to");
                         continue;
                     }
 
