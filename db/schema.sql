@@ -187,6 +187,14 @@ ALTER TABLE ONLY public.legacy_subscriptions
 
 
 --
+-- Name: legacy_subscriptions legacy_subscriptions_subscription_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.legacy_subscriptions
+    ADD CONSTRAINT legacy_subscriptions_subscription_id_key UNIQUE (subscription_id);
+
+
+--
 -- Name: legacy_subscriptions legacy_subscriptions_webhook_id_webhook_token_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -211,11 +219,19 @@ ALTER TABLE ONLY public.sent_updates
 
 
 --
--- Name: sent_updates sent_updates_subscription_id_message_id_incident_id_inciden_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: sent_updates sent_updates_subscription_id_incident_id_incident_update_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.sent_updates
-    ADD CONSTRAINT sent_updates_subscription_id_message_id_incident_id_inciden_key UNIQUE (subscription_id, message_id, incident_id, incident_update_id);
+    ADD CONSTRAINT sent_updates_subscription_id_incident_id_incident_update_id_key UNIQUE (subscription_id, incident_id, incident_update_id);
+
+
+--
+-- Name: sent_updates sent_updates_subscription_id_message_id_incident_update_id_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.sent_updates
+    ADD CONSTRAINT sent_updates_subscription_id_message_id_incident_update_id_key UNIQUE (subscription_id, message_id, incident_update_id);
 
 
 --

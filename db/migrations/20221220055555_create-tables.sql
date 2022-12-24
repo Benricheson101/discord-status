@@ -41,7 +41,7 @@ CREATE TABLE sent_updates (
   subscription_id INT NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
   legacy_subscription_id INT REFERENCES legacy_subscriptions(id) ON DELETE SET NULL,
 
-  UNIQUE(subscription_id, incident_id, incident_update_id)
+  UNIQUE(subscription_id, incident_id, incident_update_id),
   UNIQUE(subscription_id, message_id, incident_update_id)
 );
 
