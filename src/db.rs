@@ -1,4 +1,10 @@
-use sqlx::{types::time::OffsetDateTime, PgPool};
+use sqlx::{
+    postgres::PgQueryResult,
+    types::time::OffsetDateTime,
+    PgPool,
+    Postgres,
+    QueryBuilder,
+};
 
 use crate::error::Result;
 
@@ -57,21 +63,28 @@ impl Database {
 
     pub async fn get_incident_created_subscriptions(
         &self,
+        incident_id: &String,
     ) -> Result<Vec<SelectSubsForIncidentCreated>> {
         sqlx::query_as!(
             SelectSubsForIncidentCreated,
             r#"
                 SELECT
-                    subscriptions.id AS "subscription_id!",
-                    subscriptions.kind AS "kind!: _",
-                    legacy_subscriptions.id AS "legacy_subscription_id?",
-                    subscriptions.channel_id AS "channel_id!",
-                    legacy_subscriptions.webhook_id AS "webhook_id?",
-                    legacy_subscriptions.webhook_token AS "webhook_token?"
-                FROM subscriptions
-                LEFT JOIN legacy_subscriptions
-                ON subscriptions.id = legacy_subscriptions.subscription_id
-            "#
+                    s.id AS "subscription_id!",
+                    s.kind AS "kind!: _",
+                    l.id AS "legacy_subscription_id?",
+                    s.channel_id AS "channel_id!",
+                    l.webhook_id AS "webhook_id?",
+                    l.webhook_token AS "webhook_token?"
+                FROM subscriptions AS s
+                LEFT JOIN legacy_subscriptions AS l
+                    ON s.id = l.subscription_id
+                LEFT JOIN sent_updates AS u
+                    ON s.id = u.subscription_id
+                    AND u.incident_id = $1
+                WHERE u.incident_id IS NULL
+                GROUP BY s.id, l.id
+            "#,
+            incident_id,
         )
         .fetch_all(&self.pg)
         .await
@@ -81,6 +94,7 @@ impl Database {
     pub async fn get_incident_update_created_subscriptions(
         &self,
         incident_id: &String,
+        incident_update_id: &String,
     ) -> Result<Vec<SelectSubForUpdateCreated>> {
         sqlx::query_as!(
             SelectSubForUpdateCreated,
@@ -104,9 +118,15 @@ impl Database {
                     WHERE kind = 'edit'
                     AND incident_id = $1
                 ) AS u
-                ON u.subscription_id = s.id;
+                    ON u.subscription_id = s.id
+                LEFT JOIN sent_updates AS u2
+                   ON s.id = u2.subscription_id
+                   AND u2.incident_id = $1
+                   AND u2.incident_update_id = $2
+                WHERE u2.incident_update_id IS NULL
             "#,
             incident_id,
+            incident_update_id,
         )
         .fetch_all(&self.pg)
         .await
@@ -171,6 +191,35 @@ impl Database {
         .await?;
 
         Ok(())
+    }
+
+    pub async fn create_many_sent_updates(
+        &self,
+        data: Vec<CreateSentUpdate<'_>>,
+    ) -> Result<PgQueryResult> {
+        let mut qb: QueryBuilder<Postgres> = QueryBuilder::new(
+            r#"
+                INSERT INTO sent_updates (
+                    message_id,
+                    kind,
+                    incident_id,
+                    incident_update_id,
+                    subscription_id,
+                    legacy_subscription_id
+                )
+        "#,
+        );
+
+        qb.push_values(data, |mut b, d| {
+            b.push_bind(d.message_id)
+                .push_bind(d.kind)
+                .push_bind(d.incident_id)
+                .push_bind(d.incident_update_id)
+                .push_bind(d.subscription_id)
+                .push_bind(d.legacy_subscription_id);
+        });
+
+        qb.build().execute(&self.pg).await.map_err(|e| e.into())
     }
 
     pub async fn create_subscription(

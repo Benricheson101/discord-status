@@ -21,7 +21,7 @@ CREATE TABLE legacy_subscriptions (
   webhook_id BIGINT NOT NULL,
   webhook_token TEXT NOT NULL,
 
-  subscription_id INT NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
+  subscription_id INT UNIQUE NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
 
   UNIQUE(webhook_id, webhook_token)
 );
@@ -41,7 +41,8 @@ CREATE TABLE sent_updates (
   subscription_id INT NOT NULL REFERENCES subscriptions(id) ON DELETE CASCADE,
   legacy_subscription_id INT REFERENCES legacy_subscriptions(id) ON DELETE SET NULL,
 
-  UNIQUE(subscription_id, message_id, incident_id, incident_update_id)
+  UNIQUE(subscription_id, incident_id, incident_update_id)
+  UNIQUE(subscription_id, message_id, incident_update_id)
 );
 
 CREATE OR REPLACE FUNCTION trigger_set_timestamp()
