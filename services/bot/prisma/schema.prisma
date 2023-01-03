@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model LegacySubscriptions {
+  id             Int           @id @default(autoincrement())
+  webhookId      BigInt        @map("webhook_id")
+  webhookToken   String        @map("webhook_token")
+  subscriptionId Int           @unique @map("subscription_id")
+  subscriptions  Subscriptions @relation(fields: [subscriptionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sentUpdates    SentUpdates[]
+
+  @@unique([webhookId, webhookToken])
+  @@map("legacy_subscriptions")
+}
+
+model SentUpdates {
+  id                   Int                  @id @default(autoincrement())
+  messageId            BigInt               @map("message_id")
+  kind                 SubscriptionKind
+  incidentId           String               @map("incident_id")
+  incidentUpdateId     String               @map("incident_update_id")
+  createdAt            DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime             @default(now()) @map("updated_at") @db.Timestamptz(6)
+  subscriptionId       Int                  @map("subscription_id")
+  legacySubscriptionId Int?                 @map("legacy_subscription_id")
+  legacySubscriptions  LegacySubscriptions? @relation(fields: [legacySubscriptionId], references: [id], onUpdate: NoAction)
+  subscriptions        Subscriptions        @relation(fields: [subscriptionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([subscriptionId, incidentId, incidentUpdateId])
+  @@unique([subscriptionId, messageId, incidentUpdateId])
+  @@map("sent_updates")
+}
+
+model Subscriptions {
+  id                  Int                  @id @default(autoincrement())
+  guildId             BigInt               @unique @map("guild_id")
+  channelId           BigInt               @unique @map("channel_id")
+  kind                SubscriptionKind     @default(edit)
+  rolePings           BigInt[]             @default([]) @map("role_pings")
+  createdAt           DateTime             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime             @default(now()) @map("updated_at") @db.Timestamptz(6)
+  legacySubscriptions LegacySubscriptions?
+  sentUpdates         SentUpdates[]
+
+  @@map("subscriptions")
+}
+
+enum SubscriptionKind {
+  post
+  edit
+
+  @@map("subscription_kind")
+}
