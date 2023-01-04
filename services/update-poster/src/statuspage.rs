@@ -10,14 +10,17 @@ use futures::Stream;
 use reqwest::Client as ReqwestClient;
 use serde::{Deserialize, Serialize};
 use tokio::{
-    sync::mpsc::{self, UnboundedReceiver, UnboundedSender},
+    sync::{
+        broadcast::Receiver,
+        mpsc::{self, UnboundedReceiver, UnboundedSender},
+    },
     time,
 };
 use tracing::info;
 #[derive(Clone)]
 pub struct StatuspageAPI {
     reqwest_client: ReqwestClient,
-    statuspage_api_url: String,
+    pub statuspage_api_url: String,
 }
 
 impl StatuspageAPI {
@@ -26,13 +29,13 @@ impl StatuspageAPI {
 
         Self {
             reqwest_client,
-            statuspage_api_url: env::var("STATUSPAGE_API_URL")
-                .expect("Missing `STATUSPAGE_API_URL` in env"),
+            statuspage_api_url: env::var("STATUSPAGE_URL")
+                .expect("Missing `STATUSPAGE_URL` in env"),
         }
     }
 
     pub async fn get_all_incidents(&self) -> reqwest::Result<Incidents> {
-        let url = format!("{}/incidents.json", self.statuspage_api_url);
+        let url = format!("{}/api/v2/incidents.json", self.statuspage_api_url);
 
         self.reqwest_client
             .get(url)
@@ -74,14 +77,12 @@ impl StatuspageUpdatesPoll {
         Self { tx, statuspage_api }
     }
 
-    pub async fn start(&self) {
+    pub async fn start(&self, mut stop: Receiver<()>) {
         let mut prev = self.statuspage_api.get_all_incidents().await.unwrap();
 
         let mut interval = time::interval(Duration::from_secs(5));
 
-        // TODO: why does this sometimes get into a weird state where it loops infinitely?
         loop {
-            interval.tick().await;
             let curr = self.statuspage_api.get_all_incidents().await.unwrap();
             let changes = self.cmp_incidents(&prev, &curr);
 
@@ -90,6 +91,14 @@ impl StatuspageUpdatesPoll {
             }
 
             prev = curr;
+
+            tokio::select! {
+                _ = interval.tick() => {},
+                _ = stop.recv() => {
+                    info!("recvd stop signal");
+                    break;
+                }
+            };
         }
     }
 

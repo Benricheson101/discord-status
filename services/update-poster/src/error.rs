@@ -9,16 +9,18 @@ pub enum ApplicationError {
         source: twilight_http::Error,
     },
 
-    #[error("failed to send message to channel {}: {:?}", .channel_id, .error)]
+    #[error("failed to send message to channel {}: {:?} (webhook: {:?})", .channel_id, .error, .webhook_id)]
     MessageSendError {
         channel_id: u64,
+        webhook_id: Option<u64>,
         error: twilight_http::Error,
     },
 
-    #[error("failed to edit message {}/{}: {:?}", .channel_id, .message_id, .error)]
+    #[error("failed to edit message {}/{}: {:?} (webhook: {:?})", .channel_id, .message_id, .error, .webhook_id)]
     MessageEditError {
         channel_id: u64,
         message_id: u64,
+        webhook_id: Option<u64>,
         error: twilight_http::Error,
     },
 
