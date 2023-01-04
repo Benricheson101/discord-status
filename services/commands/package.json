@@ -1,5 +1,5 @@
 {
-  "name": "discord-status-bot",
+  "name": "discord-status-commands",
   "version": "1.0.0",
   "description": "",
   "main": "build/src/index.js",
@@ -7,11 +7,8 @@
     "dev": "nodemon",
     "lint": "gts lint",
     "clean": "gts clean",
-    "build": "tsc && tsc-alias",
-    "fmt": "gts fix",
-    "prepare": "pnpm run build",
-    "pretest": "pnpm run build",
-    "posttest": "pnpm run lint"
+    "build": "tsc && tsc-alias && prisma generate",
+    "fmt": "gts fix"
   },
   "keywords": [],
   "author": "",
@@ -19,7 +16,6 @@
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^4.0.0",
     "@types/node": "^18.11.18",
-    "dotenv": "^16.0.3",
     "gts": "^3.1.1",
     "nodemon": "^2.0.20",
     "prettier": "^2.8.1",

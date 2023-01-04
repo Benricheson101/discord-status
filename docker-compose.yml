@@ -1,0 +1,48 @@
+x-env: &env
+  DISCORD_TOKEN: '${DISCORD_TOKEN}'
+  DATABASE_URL: 'postgres://discordstatus:discordstatus@postgres/discord-status?connect_timeout=3000&sslmode=disable'
+  # STATUSPAGE_API_URL: 'https://discordstatus.com/api/v2'
+  STATUSPAGE_API_URL: 'https://wgbgn12kd4gt.statuspage.io/api/v2'
+  SUPPORT_SERVER: 'https://discord.gg/pupy'
+
+services:
+  commands:
+    build:
+      dockerfile: './services/commands/Dockerfile'
+      context: '.'
+    environment:
+      <<: *env
+      DISCORD_PUBLIC_KEY: '${DISCORD_PUBLIC_KEY}'
+    ports:
+      - '3000:3000'
+    depends_on:
+      - 'postgres'
+    deploy:
+      restart_policy:
+        condition: 'on-failure'
+
+  update-poster:
+    build:
+      dockerfile: './services/update-poster/Dockerfile'
+      context: '.'
+    environment:
+      <<: *env
+    depends_on:
+      - 'postgres'
+    deploy:
+      restart_policy:
+        condition: 'on-failure'
+
+  postgres:
+    command: "postgres -c listen_addresses='*'"
+    image: 'postgres'
+    restart: 'always'
+    environment:
+      POSTGRES_USER: 'discordstatus'
+      POSTGRES_PASSWORD: 'discordstatus'
+      POSTGRES_DB: 'discord-status'
+    volumes:
+      - 'postgres_data:/var/lib/postgresql/data'
+
+volumes:
+  postgres_data:

@@ -1,0 +1,15 @@
+*
+
+!./db
+
+!./services/commands/package.json
+!./services/commands/pnpm-lock.yaml
+!./services/commands/tsconfig.json
+!./services/commands/prisma
+!./services/commands/src
+!./services/commands/lib
+
+!./services/update-poster/Cargo.toml
+!./services/update-poster/Cargo.lock
+!./services/update-poster/sqlx-data.json
+!./services/update-poster/src

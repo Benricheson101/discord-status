@@ -7,7 +7,6 @@ specifiers:
   '@types/node': ^18.11.18
   discord-api-types: ^0.37.25
   discord-verify: ^1.0.0
-  dotenv: ^16.0.3
   gts: ^3.1.1
   nodemon: ^2.0.20
   prettier: ^2.8.1
@@ -26,7 +25,6 @@ dependencies:
 devDependencies:
   '@trivago/prettier-plugin-sort-imports': 4.0.0_prettier@2.8.1
   '@types/node': 18.11.18
-  dotenv: 16.0.3
   gts: 3.1.1_typescript@4.7.4
   nodemon: 2.0.20
   prettier: 2.8.1
@@ -940,11 +938,6 @@ packages:
     engines: {node: '>=6.0.0'}
     dependencies:
       esutils: 2.0.3
-    dev: true
-
-  /dotenv/16.0.3:
-    resolution: {integrity: sha512-7GO6HghkA5fYG9TYnNxi14/7K9f5occMlp3zXAuSxn7CKCxt9xbNWG7yF8hTCSUchlfWSe3uLmlPfigevRItzQ==}
-    engines: {node: '>=12'}
     dev: true
 
   /electron-to-chromium/1.4.284:
