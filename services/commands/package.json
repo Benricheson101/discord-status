@@ -7,7 +7,7 @@
     "dev": "nodemon",
     "lint": "gts lint",
     "clean": "gts clean",
-    "build": "tsc && tsc-alias && prisma generate",
+    "build": "prisma generate && tsc && tsc-alias",
     "fmt": "gts fix"
   },
   "keywords": [],
@@ -16,6 +16,7 @@
   "devDependencies": {
     "@trivago/prettier-plugin-sort-imports": "^4.0.0",
     "@types/node": "^18.11.18",
+    "dotenv": "^16.0.3",
     "gts": "^3.1.1",
     "nodemon": "^2.0.20",
     "prettier": "^2.8.1",
@@ -29,7 +30,8 @@
     "@discordjs/rest": "^1.5.0",
     "@prisma/client": "^4.8.0",
     "discord-api-types": "^0.37.25",
-    "discord-verify": "^1.0.0"
+    "discord-verify": "^1.0.0",
+    "statuspage.js": "^1.0.17"
   },
   "engines": {
     "node": ">=18.12.2"

@@ -1,6 +1,7 @@
 import {IncomingMessage, ServerResponse} from 'node:http';
 
 import {
+  APIApplicationCommandOption,
   APIChatInputApplicationCommandInteraction,
   APIInteractionResponse,
   RESTPostAPIChatInputApplicationCommandsJSONBody,
@@ -13,6 +14,7 @@ export abstract class Command
 {
   abstract name: string;
   abstract description: string;
+  options: APIApplicationCommandOption[] = [];
 
   abstract run(
     client: Client,
