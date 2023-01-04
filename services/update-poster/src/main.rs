@@ -51,16 +51,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let statuspage_api = StatuspageAPI::new();
     let (mut su, poll) = StatuspageUpdates::new(statuspage_api);
-    let (stop_tx, stop_rx) = broadcast::channel(1);
+    let (stop_tx, stop_poll_rx) = broadcast::channel(1);
 
-    let mut stop_rx_clone = stop_tx.subscribe();
+    let mut stop_handler_rx = stop_tx.subscribe();
     let listener_handle = tokio::spawn(async move {
         loop {
             tokio::select! {
                 Some(updates) = su.next() => {
                     handle_updates(updates, &db, &discord_rest_client).await;
                 },
-                _ = stop_rx_clone.recv() => {
+                _ = stop_handler_rx.recv() => {
                     info!("recvd stop signal");
                     break;
                 },
@@ -80,7 +80,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             source = env::var("STATUSPAGE_URL").unwrap(),
             "Begin polling for updates"
         );
-        poll.start(stop_rx).await;
+        poll.start(stop_poll_rx).await;
     });
 
     let (_, _) = futures::join!(listener_handle, poll_handle);
