@@ -127,6 +127,7 @@ async fn handle_updates(
                             s.channel_id,
                             s.webhook_id,
                             &s.webhook_token,
+                            &s.role_pings,
                             embed,
                         )
                         .await,
@@ -215,6 +216,7 @@ async fn handle_updates(
                                     s.channel_id,
                                     s.webhook_id,
                                     &s.webhook_token,
+                                    &s.role_pings,
                                     embed,
                                 )
                                 .await,
@@ -229,6 +231,7 @@ async fn handle_updates(
                                     s.channel_id,
                                     s.webhook_id,
                                     &s.webhook_token,
+                                    &s.role_pings,
                                     embed,
                                 )
                                 .await,
@@ -335,12 +338,21 @@ async fn create_message(
     channel_id: i64,
     webhook_id: Option<i64>,
     webhook_token: &Option<String>,
+    role_pings: &Vec<i64>,
     embed: Embed,
 ) -> Result<Id<MessageMarker>, ApplicationError> {
     let created_msg =
         if let (Some(id), Some(token)) = (webhook_id, webhook_token) {
             rest_client
                 .execute_webhook(Id::new(id as u64), &token)
+                .content(
+                    &role_pings
+                        .iter()
+                        .map(|r| format!("<@&{r}>"))
+                        .collect::<Vec<_>>()
+                        .join(" "),
+                )
+                .unwrap()
                 .embeds(&[embed])
                 .unwrap()
                 .wait()
@@ -353,6 +365,14 @@ async fn create_message(
         } else {
             rest_client
                 .create_message(Id::new(channel_id as u64))
+                .content(
+                    &role_pings
+                        .iter()
+                        .map(|r| format!("<@&{r}>"))
+                        .collect::<Vec<_>>()
+                        .join(" "),
+                )
+                .unwrap()
                 .embeds(&[embed])
                 .unwrap()
                 .await

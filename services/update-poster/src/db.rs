@@ -71,6 +71,7 @@ impl Database {
                 SELECT
                     s.id AS "subscription_id!",
                     s.kind AS "kind!: _",
+                    s.role_pings AS "role_pings!",
                     l.id AS "legacy_subscription_id?",
                     s.channel_id AS "channel_id!",
                     l.webhook_id AS "webhook_id?",
@@ -103,6 +104,7 @@ impl Database {
                     s.channel_id as "channel_id!",
                     s.id as "subscription_id!",
                     s.kind as "kind!: _",
+                    s.role_pings as "role_pings!",
                     l.id as "legacy_subscription_id?",
                     l.webhook_id as "webhook_id?",
                     l.webhook_token as "webhook_token?",
@@ -327,6 +329,7 @@ pub struct CreateSentUpdate<'a> {
 pub struct SelectSubsForIncidentCreated {
     pub subscription_id: i32,
     pub kind: SubscriptionKind,
+    pub role_pings: Vec<i64>,
     pub legacy_subscription_id: Option<i32>,
     pub channel_id: i64,
     pub webhook_id: Option<i64>,
@@ -338,6 +341,7 @@ pub struct SelectSubForUpdateCreated {
     pub channel_id: i64,
     pub subscription_id: i32,
     pub kind: SubscriptionKind,
+    pub role_pings: Vec<i64>,
     pub legacy_subscription_id: Option<i32>,
     pub webhook_id: Option<i64>,
     pub webhook_token: Option<String>,
