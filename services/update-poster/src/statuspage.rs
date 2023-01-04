@@ -16,7 +16,7 @@ use tokio::{
     },
     time,
 };
-use tracing::info;
+use tracing::{info, warn};
 #[derive(Clone)]
 pub struct StatuspageAPI {
     reqwest_client: ReqwestClient,
@@ -83,7 +83,14 @@ impl StatuspageUpdatesPoll {
         let mut interval = time::interval(Duration::from_secs(5));
 
         loop {
-            let curr = self.statuspage_api.get_all_incidents().await.unwrap();
+            let curr = match self.statuspage_api.get_all_incidents().await {
+                Ok(curr) => curr,
+                Err(err) => {
+                    warn!("Failed to get status page incidents: {:#?}", err);
+                    continue;
+                },
+            };
+
             let changes = self.cmp_incidents(&prev, &curr);
 
             if !changes.is_empty() {

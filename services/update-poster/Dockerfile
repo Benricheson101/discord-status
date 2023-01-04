@@ -6,5 +6,5 @@ RUN cargo build --release
 
 FROM alpine AS runtime
 RUN apk add libc6-compat
-COPY --from=builder /app/target/release/discord-status-update-poster /usr/bin
-CMD ["/usr/bin/discord-status-update-poster"]
+COPY --from=builder /app/target/release/update-poster /usr/bin
+CMD ["/usr/bin/update-poster"]

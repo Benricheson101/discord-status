@@ -15,4 +15,4 @@ RUN pnpm build
 
 EXPOSE 3000
 
-CMD ["node", "-r", "dotenv/config", "./build/src/index.js"]
+CMD ["node", "./build/src/index.js"]
