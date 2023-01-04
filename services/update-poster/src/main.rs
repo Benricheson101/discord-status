@@ -114,11 +114,11 @@ async fn handle_updates(
                 }
 
                 let futs = subs.into_iter().map(|s| async {
-                    let embed = match s.kind {
-                        SubscriptionKind::Post => {
+                    let embed = match s.mode {
+                        SubscriptionMode::Post => {
                             make_post_embed(i, &i.incident_updates[0])
                         },
-                        SubscriptionKind::Edit => make_edit_embed(i),
+                        SubscriptionMode::Edit => make_edit_embed(i),
                     };
 
                     (
@@ -154,12 +154,11 @@ async fn handle_updates(
                     .map(|(msg_id, sub)| {
                         let msg_id = msg_id.unwrap();
                         CreateSentUpdate {
-                            kind: sub.kind,
+                            mode: sub.mode,
                             message_id: msg_id.get() as i64,
                             incident_id: &i.id,
                             incident_update_id: &i.incident_updates[0].id,
                             subscription_id: sub.subscription_id,
-                            legacy_subscription_id: sub.legacy_subscription_id,
                         }
                     })
                     .collect();
@@ -192,8 +191,8 @@ async fn handle_updates(
                 }
 
                 let futs = subs.into_iter().map(|s| async {
-                    match (s.kind, s.message_id) {
-                        (SubscriptionKind::Edit, Some(msg_id)) => {
+                    match (s.mode, s.message_id) {
+                        (SubscriptionMode::Edit, Some(msg_id)) => {
                             let embed = make_edit_embed(i);
                             (
                                 update_message(
@@ -208,7 +207,7 @@ async fn handle_updates(
                                 s,
                             )
                         },
-                        (SubscriptionKind::Edit, None) => {
+                        (SubscriptionMode::Edit, None) => {
                             let embed = make_edit_embed(i);
                             (
                                 create_message(
@@ -223,7 +222,7 @@ async fn handle_updates(
                                 s,
                             )
                         },
-                        (SubscriptionKind::Post, _) => {
+                        (SubscriptionMode::Post, _) => {
                             let embed = make_post_embed(i, u);
                             (
                                 create_message(
@@ -259,12 +258,11 @@ async fn handle_updates(
                         let msg_id = msg_id.unwrap();
 
                         CreateSentUpdate {
-                            kind: sub.kind,
+                            mode: sub.mode,
                             message_id: msg_id.get() as i64,
                             incident_id: &i.id,
                             incident_update_id: &u.id,
                             subscription_id: sub.subscription_id,
-                            legacy_subscription_id: sub.legacy_subscription_id,
                         }
                     })
                     .collect();
@@ -297,9 +295,9 @@ async fn handle_updates(
                 }
 
                 let futs = subs.iter().map(|s| {
-                    let embed = match s.kind {
-                        SubscriptionKind::Post => make_post_embed(i, u_new),
-                        SubscriptionKind::Edit => make_edit_embed(i),
+                    let embed = match s.mode {
+                        SubscriptionMode::Post => make_post_embed(i, u_new),
+                        SubscriptionMode::Edit => make_edit_embed(i),
                     };
 
                     update_message(

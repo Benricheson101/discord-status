@@ -1,26 +1,16 @@
 {
   "db": "PostgreSQL",
-  "128dd659894854574e7020cbad2fff1498e9635cffa990b7f35886b1b9480be6": {
+  "619dd81f62aa1988bd6e743e426325b5c47381198df9353d3f5acf029e6183fa": {
     "describe": {
       "columns": [
         {
-          "name": "id",
+          "name": "subscription_id!",
           "ordinal": 0,
           "type_info": "Int4"
         },
         {
-          "name": "guild_id",
+          "name": "mode!: _",
           "ordinal": 1,
-          "type_info": "Int8"
-        },
-        {
-          "name": "channel_id",
-          "ordinal": 2,
-          "type_info": "Int8"
-        },
-        {
-          "name": "kind: _",
-          "ordinal": 3,
           "type_info": {
             "Custom": {
               "kind": {
@@ -29,24 +19,29 @@
                   "edit"
                 ]
               },
-              "name": "subscription_kind"
+              "name": "subscription_mode"
             }
           }
         },
         {
-          "name": "role_pings",
-          "ordinal": 4,
+          "name": "role_pings!",
+          "ordinal": 2,
           "type_info": "Int8Array"
         },
         {
-          "name": "created_at",
-          "ordinal": 5,
-          "type_info": "Timestamptz"
+          "name": "channel_id!",
+          "ordinal": 3,
+          "type_info": "Int8"
         },
         {
-          "name": "updated_at",
-          "ordinal": 6,
-          "type_info": "Timestamptz"
+          "name": "webhook_id?",
+          "ordinal": 4,
+          "type_info": "Int8"
+        },
+        {
+          "name": "webhook_token?",
+          "ordinal": 5,
+          "type_info": "Text"
         }
       ],
       "nullable": [
@@ -54,17 +49,111 @@
         false,
         false,
         false,
-        false,
-        false,
-        false
+        true,
+        true
       ],
       "parameters": {
-        "Left": []
+        "Left": [
+          "Text"
+        ]
       }
     },
-    "query": "\n                SELECT\n                    id,\n                    guild_id,\n                    channel_id,\n                    kind as \"kind: _\",\n                    role_pings,\n                    created_at,\n                    updated_at\n                FROM subscriptions"
+    "query": "\n                SELECT\n                    s.id AS \"subscription_id!\",\n                    s.mode AS \"mode!: _\",\n                    s.role_pings AS \"role_pings!\",\n                    s.channel_id AS \"channel_id!\",\n                    s.webhook_id AS \"webhook_id?\",\n                    s.webhook_token AS \"webhook_token?\"\n                FROM subscriptions AS s\n                LEFT JOIN sent_updates AS u\n                    ON s.id = u.subscription_id\n                    AND u.incident_id = $1\n                WHERE u.incident_id IS NULL\n                GROUP BY s.id\n            "
   },
-  "453b610d26cfc01682429be391f42922a09db7d8d13c7c0fdacce8c1204e1216": {
+  "b2132a3ddbdad57c8353b6da250b4e676dbdcda98b177eadabfef056b4c1e7d9": {
+    "describe": {
+      "columns": [
+        {
+          "name": "channel_id!",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "subscription_id!",
+          "ordinal": 1,
+          "type_info": "Int4"
+        },
+        {
+          "name": "mode!: _",
+          "ordinal": 2,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "post",
+                  "edit"
+                ]
+              },
+              "name": "subscription_mode"
+            }
+          }
+        },
+        {
+          "name": "role_pings!",
+          "ordinal": 3,
+          "type_info": "Int8Array"
+        },
+        {
+          "name": "webhook_id?",
+          "ordinal": 4,
+          "type_info": "Int8"
+        },
+        {
+          "name": "webhook_token?",
+          "ordinal": 5,
+          "type_info": "Text"
+        },
+        {
+          "name": "message_id?",
+          "ordinal": 6,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        true,
+        true,
+        true
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n                SELECT\n                    s.channel_id as \"channel_id!\",\n                    s.id as \"subscription_id!\",\n                    s.mode as \"mode!: _\",\n                    s.role_pings as \"role_pings!\",\n                    s.webhook_id as \"webhook_id?\",\n                    s.webhook_token as \"webhook_token?\",\n                    u.message_id as \"message_id?\"\n                FROM subscriptions AS s\n                LEFT JOIN (\n                    SELECT DISTINCT ON (incident_id, subscription_id)\n                        subscription_id,\n                        message_id\n                    FROM sent_updates\n                    WHERE mode = 'edit'\n                    AND incident_id = $1\n                ) AS u\n                    ON u.subscription_id = s.id\n                LEFT JOIN sent_updates AS u2\n                   ON s.id = u2.subscription_id\n                   AND u2.incident_id = $1\n                   AND u2.incident_update_id = $2\n                WHERE u2.incident_update_id IS NULL\n            "
+  },
+  "b989113b32221f04b83249f116934c59614aeb3d35d17b6ae8fa5186df540467": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Int8",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "post",
+                  "edit"
+                ]
+              },
+              "name": "subscription_mode"
+            }
+          },
+          "Text",
+          "Text",
+          "Int4"
+        ]
+      }
+    },
+    "query": "\n                INSERT INTO sent_updates (\n                    message_id,\n                    mode,\n                    incident_id,\n                    incident_update_id,\n                    subscription_id\n                )\n                VALUES ($1, $2, $3, $4, $5)\n            "
+  },
+  "bd8716724917c0a653b43868e22db79e19252413e883f140a38ff4dd781c12e4": {
     "describe": {
       "columns": [
         {
@@ -83,7 +172,7 @@
           "type_info": "Int8"
         },
         {
-          "name": "kind: _",
+          "name": "mode: _",
           "ordinal": 3,
           "type_info": {
             "Custom": {
@@ -93,7 +182,7 @@
                   "edit"
                 ]
               },
-              "name": "subscription_kind"
+              "name": "subscription_mode"
             }
           }
         },
@@ -128,70 +217,9 @@
         ]
       }
     },
-    "query": "\n                SELECT\n                    id,\n                    guild_id,\n                    channel_id,\n                    kind as \"kind: _\",\n                    role_pings,\n                    created_at,\n                    updated_at\n                FROM subscriptions\n                WHERE guild_id = $1\n            "
+    "query": "\n                SELECT\n                    id,\n                    guild_id,\n                    channel_id,\n                    mode as \"mode: _\",\n                    role_pings,\n                    created_at,\n                    updated_at\n                FROM subscriptions\n                WHERE guild_id = $1\n            "
   },
-  "60a5caa0a4fa0aaddec6487a60fa3ed13719d7eb9832294f410e3f30b7d531f6": {
-    "describe": {
-      "columns": [
-        {
-          "name": "channel_id!",
-          "ordinal": 0,
-          "type_info": "Int8"
-        },
-        {
-          "name": "subscription_id!",
-          "ordinal": 1,
-          "type_info": "Int4"
-        },
-        {
-          "name": "kind!: _",
-          "ordinal": 2,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "post",
-                  "edit"
-                ]
-              },
-              "name": "subscription_kind"
-            }
-          }
-        },
-        {
-          "name": "webhook_id?",
-          "ordinal": 3,
-          "type_info": "Int8"
-        },
-        {
-          "name": "webhook_token?",
-          "ordinal": 4,
-          "type_info": "Text"
-        },
-        {
-          "name": "message_id!",
-          "ordinal": 5,
-          "type_info": "Int8"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Text"
-        ]
-      }
-    },
-    "query": "\n                SELECT\n                    s.channel_id as \"channel_id!\",\n                    s.id as \"subscription_id!\",\n                    s.kind as \"kind!: _\",\n                    l.webhook_id as \"webhook_id?\",\n                    l.webhook_token as \"webhook_token?\",\n                    u.message_id as \"message_id!\"\n                FROM subscriptions AS s\n                LEFT JOIN legacy_subscriptions AS l\n                    ON s.id = l.subscription_id\n                INNER JOIN sent_updates AS u\n                    ON s.id = u.subscription_id\n                    AND u.incident_id = $1\n                    AND u.incident_update_id = $2\n            "
-  },
-  "6318ed9b0838c9c648ae66d5e7ce0434256d0383cd1e1e2e42edf33860b5fff8": {
+  "dd440f72de6a5821ef76bfdaf317fd9c3dc2f6c806294b90b5c47e0d904220b9": {
     "describe": {
       "columns": [
         {
@@ -210,7 +238,7 @@
           "type_info": "Int8"
         },
         {
-          "name": "kind: _",
+          "name": "mode: _",
           "ordinal": 3,
           "type_info": {
             "Custom": {
@@ -220,7 +248,7 @@
                   "edit"
                 ]
               },
-              "name": "subscription_kind"
+              "name": "subscription_mode"
             }
           }
         },
@@ -261,179 +289,13 @@
                   "edit"
                 ]
               },
-              "name": "subscription_kind"
+              "name": "subscription_mode"
             }
           }
         ]
       }
     },
-    "query": "\n                INSERT INTO subscriptions (guild_id, channel_id, kind)\n                VALUES ($1, $2, $3)\n                RETURNING\n                    id,\n                    guild_id,\n                    channel_id,\n                    kind as \"kind: _\",\n                    role_pings,\n                    created_at,\n                    updated_at\n            "
-  },
-  "bf6e2b46063227e9c9bf8fab2247a9bef685de150b3a636b64197b38b7b7c2e1": {
-    "describe": {
-      "columns": [
-        {
-          "name": "channel_id!",
-          "ordinal": 0,
-          "type_info": "Int8"
-        },
-        {
-          "name": "subscription_id!",
-          "ordinal": 1,
-          "type_info": "Int4"
-        },
-        {
-          "name": "kind!: _",
-          "ordinal": 2,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "post",
-                  "edit"
-                ]
-              },
-              "name": "subscription_kind"
-            }
-          }
-        },
-        {
-          "name": "role_pings!",
-          "ordinal": 3,
-          "type_info": "Int8Array"
-        },
-        {
-          "name": "legacy_subscription_id?",
-          "ordinal": 4,
-          "type_info": "Int4"
-        },
-        {
-          "name": "webhook_id?",
-          "ordinal": 5,
-          "type_info": "Int8"
-        },
-        {
-          "name": "webhook_token?",
-          "ordinal": 6,
-          "type_info": "Text"
-        },
-        {
-          "name": "message_id?",
-          "ordinal": 7,
-          "type_info": "Int8"
-        }
-      ],
-      "nullable": [
-        true,
-        true,
-        true,
-        true,
-        false,
-        false,
-        false,
-        true
-      ],
-      "parameters": {
-        "Left": [
-          "Text",
-          "Text"
-        ]
-      }
-    },
-    "query": "\n                SELECT\n                    s.channel_id as \"channel_id!\",\n                    s.id as \"subscription_id!\",\n                    s.kind as \"kind!: _\",\n                    s.role_pings as \"role_pings!\",\n                    l.id as \"legacy_subscription_id?\",\n                    l.webhook_id as \"webhook_id?\",\n                    l.webhook_token as \"webhook_token?\",\n                    u.message_id as \"message_id?\"\n                FROM subscriptions AS s\n                LEFT JOIN legacy_subscriptions AS l\n                    ON s.id = l.subscription_id\n                LEFT JOIN (\n                    SELECT DISTINCT ON (incident_id, subscription_id)\n                        subscription_id,\n                        message_id\n                    FROM sent_updates\n                    WHERE kind = 'edit'\n                    AND incident_id = $1\n                ) AS u\n                    ON u.subscription_id = s.id\n                LEFT JOIN sent_updates AS u2\n                   ON s.id = u2.subscription_id\n                   AND u2.incident_id = $1\n                   AND u2.incident_update_id = $2\n                WHERE u2.incident_update_id IS NULL\n            "
-  },
-  "d126c1fbcb9cc34da5ea5a69f060de0b518b07cea9aaa91348b91e4239452873": {
-    "describe": {
-      "columns": [
-        {
-          "name": "subscription_id!",
-          "ordinal": 0,
-          "type_info": "Int4"
-        },
-        {
-          "name": "kind!: _",
-          "ordinal": 1,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "post",
-                  "edit"
-                ]
-              },
-              "name": "subscription_kind"
-            }
-          }
-        },
-        {
-          "name": "role_pings!",
-          "ordinal": 2,
-          "type_info": "Int8Array"
-        },
-        {
-          "name": "legacy_subscription_id?",
-          "ordinal": 3,
-          "type_info": "Int4"
-        },
-        {
-          "name": "channel_id!",
-          "ordinal": 4,
-          "type_info": "Int8"
-        },
-        {
-          "name": "webhook_id?",
-          "ordinal": 5,
-          "type_info": "Int8"
-        },
-        {
-          "name": "webhook_token?",
-          "ordinal": 6,
-          "type_info": "Text"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      }
-    },
-    "query": "\n                SELECT\n                    s.id AS \"subscription_id!\",\n                    s.kind AS \"kind!: _\",\n                    s.role_pings AS \"role_pings!\",\n                    l.id AS \"legacy_subscription_id?\",\n                    s.channel_id AS \"channel_id!\",\n                    l.webhook_id AS \"webhook_id?\",\n                    l.webhook_token AS \"webhook_token?\"\n                FROM subscriptions AS s\n                LEFT JOIN legacy_subscriptions AS l\n                    ON s.id = l.subscription_id\n                LEFT JOIN sent_updates AS u\n                    ON s.id = u.subscription_id\n                    AND u.incident_id = $1\n                WHERE u.incident_id IS NULL\n                GROUP BY s.id, l.id\n            "
-  },
-  "d24d23241e1613224cca0ea8d87176d4b62731db06a5fee5992e16977621014b": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Int8",
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "post",
-                  "edit"
-                ]
-              },
-              "name": "subscription_kind"
-            }
-          },
-          "Text",
-          "Text",
-          "Int4",
-          "Int4"
-        ]
-      }
-    },
-    "query": "\n                INSERT INTO sent_updates (\n                    message_id,\n                    kind,\n                    incident_id,\n                    incident_update_id,\n                    subscription_id,\n                    legacy_subscription_id\n                )\n                VALUES ($1, $2, $3, $4, $5, $6)\n            "
+    "query": "\n                INSERT INTO subscriptions (guild_id, channel_id, mode)\n                VALUES ($1, $2, $3)\n                RETURNING\n                    id,\n                    guild_id,\n                    channel_id,\n                    mode as \"mode: _\",\n                    role_pings,\n                    created_at,\n                    updated_at\n            "
   },
   "def55d81f915c9cb68a3c82e1c76c72656b6da8a53a935eb972da9bcbbd59f04": {
     "describe": {
@@ -446,5 +308,130 @@
       }
     },
     "query": "DELETE FROM subscriptions WHERE id = $1"
+  },
+  "e834e4f84ce57ac1e57ba656e44b68351421a9fc17ded9f7fa36f06890340970": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "guild_id",
+          "ordinal": 1,
+          "type_info": "Int8"
+        },
+        {
+          "name": "channel_id",
+          "ordinal": 2,
+          "type_info": "Int8"
+        },
+        {
+          "name": "mode: _",
+          "ordinal": 3,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "post",
+                  "edit"
+                ]
+              },
+              "name": "subscription_mode"
+            }
+          }
+        },
+        {
+          "name": "role_pings",
+          "ordinal": 4,
+          "type_info": "Int8Array"
+        },
+        {
+          "name": "created_at",
+          "ordinal": 5,
+          "type_info": "Timestamptz"
+        },
+        {
+          "name": "updated_at",
+          "ordinal": 6,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "\n                SELECT\n                    id,\n                    guild_id,\n                    channel_id,\n                    mode as \"mode: _\",\n                    role_pings,\n                    created_at,\n                    updated_at\n                FROM subscriptions"
+  },
+  "ecb6e214f2032a2b208c75247a5619baa880a67bfa18699f3f40a0a2afbb873c": {
+    "describe": {
+      "columns": [
+        {
+          "name": "channel_id!",
+          "ordinal": 0,
+          "type_info": "Int8"
+        },
+        {
+          "name": "subscription_id!",
+          "ordinal": 1,
+          "type_info": "Int4"
+        },
+        {
+          "name": "mode!: _",
+          "ordinal": 2,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "post",
+                  "edit"
+                ]
+              },
+              "name": "subscription_mode"
+            }
+          }
+        },
+        {
+          "name": "webhook_id?",
+          "ordinal": 3,
+          "type_info": "Int8"
+        },
+        {
+          "name": "webhook_token?",
+          "ordinal": 4,
+          "type_info": "Text"
+        },
+        {
+          "name": "message_id!",
+          "ordinal": 5,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        true,
+        true,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n                SELECT\n                    s.channel_id as \"channel_id!\",\n                    s.id as \"subscription_id!\",\n                    s.mode as \"mode!: _\",\n                    s.webhook_id as \"webhook_id?\",\n                    s.webhook_token as \"webhook_token?\",\n                    u.message_id as \"message_id!\"\n                FROM subscriptions AS s\n                INNER JOIN sent_updates AS u\n                    ON s.id = u.subscription_id\n                    AND u.incident_id = $1\n                    AND u.incident_update_id = $2\n            "
   }
 }

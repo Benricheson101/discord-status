@@ -28,7 +28,7 @@ impl Database {
                     id,
                     guild_id,
                     channel_id,
-                    kind as "kind: _",
+                    mode as "mode: _",
                     role_pings,
                     created_at,
                     updated_at
@@ -50,7 +50,7 @@ impl Database {
                     id,
                     guild_id,
                     channel_id,
-                    kind as "kind: _",
+                    mode as "mode: _",
                     role_pings,
                     created_at,
                     updated_at
@@ -70,20 +70,17 @@ impl Database {
             r#"
                 SELECT
                     s.id AS "subscription_id!",
-                    s.kind AS "kind!: _",
+                    s.mode AS "mode!: _",
                     s.role_pings AS "role_pings!",
-                    l.id AS "legacy_subscription_id?",
                     s.channel_id AS "channel_id!",
-                    l.webhook_id AS "webhook_id?",
-                    l.webhook_token AS "webhook_token?"
+                    s.webhook_id AS "webhook_id?",
+                    s.webhook_token AS "webhook_token?"
                 FROM subscriptions AS s
-                LEFT JOIN legacy_subscriptions AS l
-                    ON s.id = l.subscription_id
                 LEFT JOIN sent_updates AS u
                     ON s.id = u.subscription_id
                     AND u.incident_id = $1
                 WHERE u.incident_id IS NULL
-                GROUP BY s.id, l.id
+                GROUP BY s.id
             "#,
             incident_id,
         )
@@ -103,21 +100,18 @@ impl Database {
                 SELECT
                     s.channel_id as "channel_id!",
                     s.id as "subscription_id!",
-                    s.kind as "kind!: _",
+                    s.mode as "mode!: _",
                     s.role_pings as "role_pings!",
-                    l.id as "legacy_subscription_id?",
-                    l.webhook_id as "webhook_id?",
-                    l.webhook_token as "webhook_token?",
+                    s.webhook_id as "webhook_id?",
+                    s.webhook_token as "webhook_token?",
                     u.message_id as "message_id?"
                 FROM subscriptions AS s
-                LEFT JOIN legacy_subscriptions AS l
-                    ON s.id = l.subscription_id
                 LEFT JOIN (
                     SELECT DISTINCT ON (incident_id, subscription_id)
                         subscription_id,
                         message_id
                     FROM sent_updates
-                    WHERE kind = 'edit'
+                    WHERE mode = 'edit'
                     AND incident_id = $1
                 ) AS u
                     ON u.subscription_id = s.id
@@ -146,13 +140,11 @@ impl Database {
                 SELECT
                     s.channel_id as "channel_id!",
                     s.id as "subscription_id!",
-                    s.kind as "kind!: _",
-                    l.webhook_id as "webhook_id?",
-                    l.webhook_token as "webhook_token?",
+                    s.mode as "mode!: _",
+                    s.webhook_id as "webhook_id?",
+                    s.webhook_token as "webhook_token?",
                     u.message_id as "message_id!"
                 FROM subscriptions AS s
-                LEFT JOIN legacy_subscriptions AS l
-                    ON s.id = l.subscription_id
                 INNER JOIN sent_updates AS u
                     ON s.id = u.subscription_id
                     AND u.incident_id = $1
@@ -174,20 +166,18 @@ impl Database {
             r#"
                 INSERT INTO sent_updates (
                     message_id,
-                    kind,
+                    mode,
                     incident_id,
                     incident_update_id,
-                    subscription_id,
-                    legacy_subscription_id
+                    subscription_id
                 )
-                VALUES ($1, $2, $3, $4, $5, $6)
+                VALUES ($1, $2, $3, $4, $5)
             "#,
             data.message_id,
-            data.kind as SubscriptionKind,
+            data.mode as SubscriptionMode,
             data.incident_id,
             data.incident_update_id,
             data.subscription_id,
-            data.legacy_subscription_id,
         )
         .execute(&self.pg)
         .await?;
@@ -203,22 +193,20 @@ impl Database {
             r#"
                 INSERT INTO sent_updates (
                     message_id,
-                    kind,
+                    mode,
                     incident_id,
                     incident_update_id,
-                    subscription_id,
-                    legacy_subscription_id
+                    subscription_id
                 )
         "#,
         );
 
         qb.push_values(data, |mut b, d| {
             b.push_bind(d.message_id)
-                .push_bind(d.kind)
+                .push_bind(d.mode)
                 .push_bind(d.incident_id)
                 .push_bind(d.incident_update_id)
-                .push_bind(d.subscription_id)
-                .push_bind(d.legacy_subscription_id);
+                .push_bind(d.subscription_id);
         });
 
         qb.build().execute(&self.pg).await.map_err(|e| e.into())
@@ -231,20 +219,20 @@ impl Database {
         sqlx::query_as!(
             Subscription,
             r#"
-                INSERT INTO subscriptions (guild_id, channel_id, kind)
+                INSERT INTO subscriptions (guild_id, channel_id, mode)
                 VALUES ($1, $2, $3)
                 RETURNING
                     id,
                     guild_id,
                     channel_id,
-                    kind as "kind: _",
+                    mode as "mode: _",
                     role_pings,
                     created_at,
                     updated_at
             "#,
             subscription.guild_id,
             subscription.channel_id,
-            subscription.kind.unwrap_or_default() as SubscriptionKind,
+            subscription.mode.unwrap_or_default() as SubscriptionMode,
         )
         .fetch_one(&self.pg)
         .await
@@ -261,13 +249,13 @@ impl Database {
 }
 
 #[derive(Debug, sqlx::Type, Copy, Clone)]
-#[sqlx(type_name = "subscription_kind", rename_all = "lowercase")]
-pub enum SubscriptionKind {
+#[sqlx(type_name = "subscription_mode", rename_all = "lowercase")]
+pub enum SubscriptionMode {
     Post,
     Edit,
 }
 
-impl Default for SubscriptionKind {
+impl Default for SubscriptionMode {
     fn default() -> Self {
         Self::Edit
     }
@@ -280,7 +268,7 @@ pub struct Subscription {
     pub guild_id: i64,
     pub channel_id: i64,
 
-    pub kind: SubscriptionKind,
+    pub mode: SubscriptionMode,
     pub role_pings: Vec<i64>,
 
     pub created_at: OffsetDateTime,
@@ -292,45 +280,34 @@ pub struct CreateSubscription {
     pub guild_id: i64,
     pub channel_id: i64,
 
-    pub kind: Option<SubscriptionKind>,
+    pub mode: Option<SubscriptionMode>,
     pub role_pings: Option<Vec<i64>>,
-}
-
-#[derive(Debug)]
-pub struct LegacySubscription {
-    pub id: i32,
-    pub webhook_id: i64,
-    pub webhook_token: String,
-    pub subscription_id: i32,
 }
 
 #[derive(Debug)]
 pub struct SentUpdate {
     pub id: i32,
     pub message_id: i64,
-    pub kind: SubscriptionKind,
+    pub mode: SubscriptionMode,
     pub incident_id: String,
     pub incident_update_id: String,
     pub subscription_id: i32,
-    pub legacy_subscription_id: Option<i32>,
 }
 
 #[derive(Debug)]
 pub struct CreateSentUpdate<'a> {
     pub message_id: i64,
-    pub kind: SubscriptionKind,
+    pub mode: SubscriptionMode,
     pub incident_id: &'a String,
     pub incident_update_id: &'a String,
     pub subscription_id: i32,
-    pub legacy_subscription_id: Option<i32>,
 }
 
 #[derive(Debug)]
 pub struct SelectSubsForIncidentCreated {
     pub subscription_id: i32,
-    pub kind: SubscriptionKind,
+    pub mode: SubscriptionMode,
     pub role_pings: Vec<i64>,
-    pub legacy_subscription_id: Option<i32>,
     pub channel_id: i64,
     pub webhook_id: Option<i64>,
     pub webhook_token: Option<String>,
@@ -340,9 +317,8 @@ pub struct SelectSubsForIncidentCreated {
 pub struct SelectSubForUpdateCreated {
     pub channel_id: i64,
     pub subscription_id: i32,
-    pub kind: SubscriptionKind,
+    pub mode: SubscriptionMode,
     pub role_pings: Vec<i64>,
-    pub legacy_subscription_id: Option<i32>,
     pub webhook_id: Option<i64>,
     pub webhook_token: Option<String>,
     pub message_id: Option<i64>,
@@ -352,7 +328,7 @@ pub struct SelectSubForUpdateCreated {
 pub struct SelectSubsForUpdateModified {
     pub subscription_id: i32,
     pub channel_id: i64,
-    pub kind: SubscriptionKind,
+    pub mode: SubscriptionMode,
     pub webhook_id: Option<i64>,
     pub webhook_token: Option<String>,
     pub message_id: i64,

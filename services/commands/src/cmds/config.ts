@@ -1,5 +1,5 @@
 import {DiscordAPIError} from '@discordjs/rest';
-import {SubscriptionKind} from '@prisma/client';
+import {SubscriptionMode} from '@prisma/client';
 import {
   APIApplicationCommandInteractionDataChannelOption,
   APIApplicationCommandInteractionDataRoleOption,
@@ -128,13 +128,9 @@ export class ConfigCommand extends Command {
           },
           select: {
             channelId: true,
-            kind: true,
+            mode: true,
             rolePings: true,
-            legacySubscriptions: {
-              select: {
-                webhookId: true,
-              },
-            },
+            webhookId: true,
           },
         });
 
@@ -145,11 +141,14 @@ export class ConfigCommand extends Command {
         const msg = [
           ':tools: **Server Configuration:**',
           `>>> **Feed Channel:** <#${config.channelId}>`,
-          `**Mode:** ${capitalize(config.kind)}`,
+          config.webhookId && `**Webhook ID:** ${config.webhookId}`,
+          `**Mode:** ${capitalize(config.mode)}`,
           `**Role Pings:** ${
             config.rolePings.map(r => `<@&${r}>`).join(', ') || 'None'
           }`,
-        ].join('\n');
+        ]
+          .filter(Boolean)
+          .join('\n');
 
         return {
           type: InteractionResponseType.ChannelMessageWithSource,
@@ -281,7 +280,7 @@ export class ConfigCommand extends Command {
             guildId: BigInt(i.guild_id!),
           },
           select: {
-            kind: true,
+            mode: true,
           },
         });
 
@@ -290,9 +289,9 @@ export class ConfigCommand extends Command {
         }
 
         const newMode =
-          opt.name === 'post' ? SubscriptionKind.post : SubscriptionKind.edit;
+          opt.name === 'post' ? SubscriptionMode.Post : SubscriptionMode.Edit;
 
-        if (newMode === currentMode.kind) {
+        if (newMode === currentMode.mode) {
           return {
             type: InteractionResponseType.ChannelMessageWithSource,
             data: {
@@ -304,7 +303,7 @@ export class ConfigCommand extends Command {
 
         await client.prisma.subscriptions.update({
           data: {
-            kind: newMode,
+            mode: newMode,
           },
           where: {
             guildId: BigInt(i.guild_id!),
@@ -312,9 +311,9 @@ export class ConfigCommand extends Command {
         });
 
         const msg = {
-          [SubscriptionKind.edit]:
+          [SubscriptionMode.Edit]:
             'Mode is now set to `EDIT`. Each incident will get one message in your status page feed, which will be edited every time an update is published.',
-          [SubscriptionKind.post]:
+          [SubscriptionMode.Post]:
             'Mode is now set to `POST`. Every update will get its own message in your status page feed.',
         }[newMode];
 

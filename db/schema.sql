@@ -10,10 +10,10 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: subscription_kind; Type: TYPE; Schema: public; Owner: -
+-- Name: subscription_mode; Type: TYPE; Schema: public; Owner: -
 --
 
-CREATE TYPE public.subscription_kind AS ENUM (
+CREATE TYPE public.subscription_mode AS ENUM (
     'post',
     'edit'
 );
@@ -38,38 +38,6 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- Name: legacy_subscriptions; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.legacy_subscriptions (
-    id integer NOT NULL,
-    webhook_id bigint NOT NULL,
-    webhook_token text NOT NULL,
-    subscription_id integer NOT NULL
-);
-
-
---
--- Name: legacy_subscriptions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
---
-
-CREATE SEQUENCE public.legacy_subscriptions_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
---
--- Name: legacy_subscriptions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
---
-
-ALTER SEQUENCE public.legacy_subscriptions_id_seq OWNED BY public.legacy_subscriptions.id;
-
-
---
 -- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -85,13 +53,12 @@ CREATE TABLE public.schema_migrations (
 CREATE TABLE public.sent_updates (
     id integer NOT NULL,
     message_id bigint NOT NULL,
-    kind public.subscription_kind NOT NULL,
+    mode public.subscription_mode NOT NULL,
     incident_id text NOT NULL,
     incident_update_id text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    subscription_id integer NOT NULL,
-    legacy_subscription_id integer
+    subscription_id integer NOT NULL
 );
 
 
@@ -123,8 +90,10 @@ CREATE TABLE public.subscriptions (
     id integer NOT NULL,
     guild_id bigint NOT NULL,
     channel_id bigint NOT NULL,
-    kind public.subscription_kind DEFAULT 'edit'::public.subscription_kind NOT NULL,
+    mode public.subscription_mode DEFAULT 'edit'::public.subscription_mode NOT NULL,
     role_pings bigint[] DEFAULT '{}'::bigint[] NOT NULL,
+    webhook_id bigint,
+    webhook_token text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
@@ -151,13 +120,6 @@ ALTER SEQUENCE public.subscriptions_id_seq OWNED BY public.subscriptions.id;
 
 
 --
--- Name: legacy_subscriptions id; Type: DEFAULT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.legacy_subscriptions ALTER COLUMN id SET DEFAULT nextval('public.legacy_subscriptions_id_seq'::regclass);
-
-
---
 -- Name: sent_updates id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -169,30 +131,6 @@ ALTER TABLE ONLY public.sent_updates ALTER COLUMN id SET DEFAULT nextval('public
 --
 
 ALTER TABLE ONLY public.subscriptions ALTER COLUMN id SET DEFAULT nextval('public.subscriptions_id_seq'::regclass);
-
-
---
--- Name: legacy_subscriptions legacy_subscriptions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.legacy_subscriptions
-    ADD CONSTRAINT legacy_subscriptions_pkey PRIMARY KEY (id);
-
-
---
--- Name: legacy_subscriptions legacy_subscriptions_subscription_id_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.legacy_subscriptions
-    ADD CONSTRAINT legacy_subscriptions_subscription_id_key UNIQUE (subscription_id);
-
-
---
--- Name: legacy_subscriptions legacy_subscriptions_webhook_id_webhook_token_key; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.legacy_subscriptions
-    ADD CONSTRAINT legacy_subscriptions_webhook_id_webhook_token_key UNIQUE (webhook_id, webhook_token);
 
 
 --
@@ -252,10 +190,11 @@ ALTER TABLE ONLY public.subscriptions
 
 
 --
--- Name: legacy_subscriptions set_timestamp; Type: TRIGGER; Schema: public; Owner: -
+-- Name: subscriptions subscriptions_webhook_id_webhook_token_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-CREATE TRIGGER set_timestamp BEFORE UPDATE ON public.legacy_subscriptions FOR EACH ROW EXECUTE FUNCTION public.trigger_set_timestamp();
+ALTER TABLE ONLY public.subscriptions
+    ADD CONSTRAINT subscriptions_webhook_id_webhook_token_key UNIQUE (webhook_id, webhook_token);
 
 
 --
@@ -270,22 +209,6 @@ CREATE TRIGGER set_timestamp BEFORE UPDATE ON public.sent_updates FOR EACH ROW E
 --
 
 CREATE TRIGGER set_timestamp BEFORE UPDATE ON public.subscriptions FOR EACH ROW EXECUTE FUNCTION public.trigger_set_timestamp();
-
-
---
--- Name: legacy_subscriptions legacy_subscriptions_subscription_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.legacy_subscriptions
-    ADD CONSTRAINT legacy_subscriptions_subscription_id_fkey FOREIGN KEY (subscription_id) REFERENCES public.subscriptions(id) ON DELETE CASCADE;
-
-
---
--- Name: sent_updates sent_updates_legacy_subscription_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.sent_updates
-    ADD CONSTRAINT sent_updates_legacy_subscription_id_fkey FOREIGN KEY (legacy_subscription_id) REFERENCES public.legacy_subscriptions(id) ON DELETE SET NULL;
 
 
 --
