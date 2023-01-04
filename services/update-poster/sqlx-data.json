@@ -64,66 +64,6 @@
     },
     "query": "\n                SELECT\n                    id,\n                    guild_id,\n                    channel_id,\n                    kind as \"kind: _\",\n                    role_pings,\n                    created_at,\n                    updated_at\n                FROM subscriptions"
   },
-  "2a03c3a4a6ec2fc5bc3ecd0af0f19b849155e4243273bab6a64a4a528e1e25f6": {
-    "describe": {
-      "columns": [
-        {
-          "name": "subscription_id!",
-          "ordinal": 0,
-          "type_info": "Int4"
-        },
-        {
-          "name": "kind!: _",
-          "ordinal": 1,
-          "type_info": {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "post",
-                  "edit"
-                ]
-              },
-              "name": "subscription_kind"
-            }
-          }
-        },
-        {
-          "name": "legacy_subscription_id?",
-          "ordinal": 2,
-          "type_info": "Int4"
-        },
-        {
-          "name": "channel_id!",
-          "ordinal": 3,
-          "type_info": "Int8"
-        },
-        {
-          "name": "webhook_id?",
-          "ordinal": 4,
-          "type_info": "Int8"
-        },
-        {
-          "name": "webhook_token?",
-          "ordinal": 5,
-          "type_info": "Text"
-        }
-      ],
-      "nullable": [
-        false,
-        false,
-        false,
-        false,
-        false,
-        false
-      ],
-      "parameters": {
-        "Left": [
-          "Text"
-        ]
-      }
-    },
-    "query": "\n                SELECT\n                    s.id AS \"subscription_id!\",\n                    s.kind AS \"kind!: _\",\n                    l.id AS \"legacy_subscription_id?\",\n                    s.channel_id AS \"channel_id!\",\n                    l.webhook_id AS \"webhook_id?\",\n                    l.webhook_token AS \"webhook_token?\"\n                FROM subscriptions AS s\n                LEFT JOIN legacy_subscriptions AS l\n                    ON s.id = l.subscription_id\n                LEFT JOIN sent_updates AS u\n                    ON s.id = u.subscription_id\n                    AND u.incident_id = $1\n                WHERE u.incident_id IS NULL\n                GROUP BY s.id, l.id\n            "
-  },
   "453b610d26cfc01682429be391f42922a09db7d8d13c7c0fdacce8c1204e1216": {
     "describe": {
       "columns": [
@@ -329,7 +269,7 @@
     },
     "query": "\n                INSERT INTO subscriptions (guild_id, channel_id, kind)\n                VALUES ($1, $2, $3)\n                RETURNING\n                    id,\n                    guild_id,\n                    channel_id,\n                    kind as \"kind: _\",\n                    role_pings,\n                    created_at,\n                    updated_at\n            "
   },
-  "c579920f1499d60309f969d8a72fc3cf4c9c7992b5cec5b39918482a57bf5ae1": {
+  "bf6e2b46063227e9c9bf8fab2247a9bef685de150b3a636b64197b38b7b7c2e1": {
     "describe": {
       "columns": [
         {
@@ -358,27 +298,33 @@
           }
         },
         {
-          "name": "legacy_subscription_id?",
+          "name": "role_pings!",
           "ordinal": 3,
+          "type_info": "Int8Array"
+        },
+        {
+          "name": "legacy_subscription_id?",
+          "ordinal": 4,
           "type_info": "Int4"
         },
         {
           "name": "webhook_id?",
-          "ordinal": 4,
+          "ordinal": 5,
           "type_info": "Int8"
         },
         {
           "name": "webhook_token?",
-          "ordinal": 5,
+          "ordinal": 6,
           "type_info": "Text"
         },
         {
           "name": "message_id?",
-          "ordinal": 6,
+          "ordinal": 7,
           "type_info": "Int8"
         }
       ],
       "nullable": [
+        true,
         true,
         true,
         true,
@@ -394,7 +340,73 @@
         ]
       }
     },
-    "query": "\n                SELECT\n                    s.channel_id as \"channel_id!\",\n                    s.id as \"subscription_id!\",\n                    s.kind as \"kind!: _\",\n                    l.id as \"legacy_subscription_id?\",\n                    l.webhook_id as \"webhook_id?\",\n                    l.webhook_token as \"webhook_token?\",\n                    u.message_id as \"message_id?\"\n                FROM subscriptions AS s\n                LEFT JOIN legacy_subscriptions AS l\n                    ON s.id = l.subscription_id\n                LEFT JOIN (\n                    SELECT DISTINCT ON (incident_id, subscription_id)\n                        subscription_id,\n                        message_id\n                    FROM sent_updates\n                    WHERE kind = 'edit'\n                    AND incident_id = $1\n                ) AS u\n                    ON u.subscription_id = s.id\n                LEFT JOIN sent_updates AS u2\n                   ON s.id = u2.subscription_id\n                   AND u2.incident_id = $1\n                   AND u2.incident_update_id = $2\n                WHERE u2.incident_update_id IS NULL\n            "
+    "query": "\n                SELECT\n                    s.channel_id as \"channel_id!\",\n                    s.id as \"subscription_id!\",\n                    s.kind as \"kind!: _\",\n                    s.role_pings as \"role_pings!\",\n                    l.id as \"legacy_subscription_id?\",\n                    l.webhook_id as \"webhook_id?\",\n                    l.webhook_token as \"webhook_token?\",\n                    u.message_id as \"message_id?\"\n                FROM subscriptions AS s\n                LEFT JOIN legacy_subscriptions AS l\n                    ON s.id = l.subscription_id\n                LEFT JOIN (\n                    SELECT DISTINCT ON (incident_id, subscription_id)\n                        subscription_id,\n                        message_id\n                    FROM sent_updates\n                    WHERE kind = 'edit'\n                    AND incident_id = $1\n                ) AS u\n                    ON u.subscription_id = s.id\n                LEFT JOIN sent_updates AS u2\n                   ON s.id = u2.subscription_id\n                   AND u2.incident_id = $1\n                   AND u2.incident_update_id = $2\n                WHERE u2.incident_update_id IS NULL\n            "
+  },
+  "d126c1fbcb9cc34da5ea5a69f060de0b518b07cea9aaa91348b91e4239452873": {
+    "describe": {
+      "columns": [
+        {
+          "name": "subscription_id!",
+          "ordinal": 0,
+          "type_info": "Int4"
+        },
+        {
+          "name": "kind!: _",
+          "ordinal": 1,
+          "type_info": {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "post",
+                  "edit"
+                ]
+              },
+              "name": "subscription_kind"
+            }
+          }
+        },
+        {
+          "name": "role_pings!",
+          "ordinal": 2,
+          "type_info": "Int8Array"
+        },
+        {
+          "name": "legacy_subscription_id?",
+          "ordinal": 3,
+          "type_info": "Int4"
+        },
+        {
+          "name": "channel_id!",
+          "ordinal": 4,
+          "type_info": "Int8"
+        },
+        {
+          "name": "webhook_id?",
+          "ordinal": 5,
+          "type_info": "Int8"
+        },
+        {
+          "name": "webhook_token?",
+          "ordinal": 6,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n                SELECT\n                    s.id AS \"subscription_id!\",\n                    s.kind AS \"kind!: _\",\n                    s.role_pings AS \"role_pings!\",\n                    l.id AS \"legacy_subscription_id?\",\n                    s.channel_id AS \"channel_id!\",\n                    l.webhook_id AS \"webhook_id?\",\n                    l.webhook_token AS \"webhook_token?\"\n                FROM subscriptions AS s\n                LEFT JOIN legacy_subscriptions AS l\n                    ON s.id = l.subscription_id\n                LEFT JOIN sent_updates AS u\n                    ON s.id = u.subscription_id\n                    AND u.incident_id = $1\n                WHERE u.incident_id IS NULL\n                GROUP BY s.id, l.id\n            "
   },
   "d24d23241e1613224cca0ea8d87176d4b62731db06a5fee5992e16977621014b": {
     "describe": {
