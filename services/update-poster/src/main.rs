@@ -68,7 +68,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    tokio::spawn(async move {
+    let ctrl_c_handle = tokio::spawn(async move {
         tokio::signal::ctrl_c().await.ok();
         info!("Sending stop signal");
 
@@ -83,7 +83,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         poll.start(stop_poll_rx).await;
     });
 
-    let (_, _) = futures::join!(listener_handle, poll_handle);
+    let (_, _, _) = futures::join!(listener_handle, poll_handle, ctrl_c_handle);
 
     Ok(())
 }
