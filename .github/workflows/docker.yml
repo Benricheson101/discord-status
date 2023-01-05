@@ -17,7 +17,7 @@ jobs:
           - service: 'commands'
             dockerfile: './services/commands/Dockerfile'
 
-          - serivce: 'update-poster'
+          - service: 'update-poster'
             dockerfile: './services/update-poster/Dockerfile'
 
     steps:
