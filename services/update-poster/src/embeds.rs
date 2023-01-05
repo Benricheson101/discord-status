@@ -27,7 +27,7 @@ fn get_base_embed(incident: &Incident) -> Embed {
     let author = EmbedAuthor {
         name: "Discord Status".to_string(),
         icon_url: Some(
-            "https://discord.com/assets/2c21aeda16de354ba5334551a883b481.png"
+            "https://discord.com/assets/f9bb9c4af2b9c32a2c5ee0014661546d.png"
                 .to_string(),
         ),
         url: Some(
