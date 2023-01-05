@@ -1,7 +1,7 @@
 x-env: &env
   DISCORD_TOKEN: '${DISCORD_TOKEN}'
   DATABASE_URL: 'postgres://discordstatus:discordstatus@postgres/discord-status?connect_timeout=3000&sslmode=disable'
-  STATUSPAGE_API_URL: 'https://discordstatus.com'
+  STATUSPAGE_URL: 'https://discordstatus.com'
   STATUSPAGE_ID: 'srhpyqt94yxb'
   SUPPORT_SERVER: 'https://discord.gg/HAPkRETuAH'
 
