@@ -371,17 +371,28 @@ export class ConfigCommand extends Command {
             },
           });
         } catch (err) {
-          if (err instanceof DiscordAPIError && err.code === 50001) {
-            return {
-              type: InteractionResponseType.ChannelMessageWithSource,
-              data: {
-                content:
-                  ':x: I do not have permission to send messages in that channel!',
-                flags: MessageFlags.Ephemeral,
-              },
-            };
+          if (err instanceof DiscordAPIError) {
+            if ([50001, 50013].includes(err.code as number)) {
+              return {
+                type: InteractionResponseType.ChannelMessageWithSource,
+                data: {
+                  content:
+                    ':x: I do not have permission to send messages in that channel!',
+                  flags: MessageFlags.Ephemeral,
+                },
+              };
+            } else {
+              return {
+                type: InteractionResponseType.ChannelMessageWithSource,
+                data: {
+                  content: `:x: Failed to create subscription: \`${err.message}\``,
+                  flags: MessageFlags.Ephemeral,
+                },
+              };
+            }
           }
 
+          console.error('Failed to create subscription:', err);
           return {
             type: InteractionResponseType.ChannelMessageWithSource,
             data: {
