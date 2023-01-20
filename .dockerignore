@@ -8,6 +8,7 @@
 !./services/commands/prisma
 !./services/commands/src
 !./services/commands/lib
+!./services/commands/scripts
 
 !./services/update-poster/Cargo.toml
 !./services/update-poster/Cargo.lock
