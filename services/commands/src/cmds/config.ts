@@ -102,7 +102,7 @@ export class ConfigCommand extends Command {
           name: 'channel',
           description: 'The channel to post updates in',
           type: ApplicationCommandOptionType.Channel,
-          channel_types: [ChannelType.GuildText],
+          channel_types: [ChannelType.GuildText, ChannelType.GuildAnnouncement],
           required: true,
         },
       ],
