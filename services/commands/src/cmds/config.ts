@@ -356,7 +356,7 @@ export class ConfigCommand extends Command {
             body: {
               embeds: [
                 {
-                  description: `Subescribed to [Discord Status](${process.env.STATUSPAGE_URL}) updates!`,
+                  description: `Subscribed to [Discord Status](${process.env.STATUSPAGE_URL}) updates!`,
                   color: 0x43b581,
                   author: {
                     name: 'Discord Status',
