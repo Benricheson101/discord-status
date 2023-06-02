@@ -169,6 +169,11 @@ impl StatuspageUpdatesPoll {
                 },
 
                 None => {
+                    if incident.created_at.signed_duration_since(Utc::now()).num_hours() > 1 {
+                        info!(id = &incident.id, "Old incident?");
+                        continue;
+                    }
+
                     info!(id = &incident.id, "New incident found",);
                     updated_incidents.push(Update::Created(incident.clone()));
                 },
