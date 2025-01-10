@@ -263,6 +263,7 @@ pub enum StatusIndicator {
     Minor,
     Major,
     Critical,
+    Maintenance,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq)]
